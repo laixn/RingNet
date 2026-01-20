@@ -1,0 +1,6 @@
+export(ringnet)
+importFrom(dplyr,rename,select)
+importFrom(graphlayouts,layout_with_stress)
+importFrom(igraph,E,V,degree,graph_from_data_frame,induced_subgraph,vcount)
+importFrom(jsonlite,write_json)
+importFrom(parallel,clusterEvalQ,clusterExport,detectCores,makeCluster,parLapply,stopCluster)

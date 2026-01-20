@@ -1,0 +1,16 @@
+Package: ringnet
+Type: Package
+Title: RingNet Community Map Builder
+Version: 0.1.0
+Authors@R: person("YOUR_NAME", "YOUR_FAMILY_NAME", email = "you@example.com", role = c("aut", "cre"))
+Description: Build per-community node/edge maps from interaction networks and multi-omics matrices and export JSON.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Imports:
+    igraph,
+    graphlayouts,
+    jsonlite,
+    parallel,
+    dplyr
