@@ -34,12 +34,9 @@ ringnet/
 ##### Local installation (GitHub)
 ```
 install.packages("remotes")
-remotes::install_github(
-  "Lancelof2019/ringnet",
-  dependencies = TRUE,
-  upgrade = "never"
-)
-
+remotes::install_github("laixn/RingNet",
+                        dependencies = TRUE,
+                        upgrade = "never")
 library(ringnet)
 ```
 ##### Installation on a server (user folder)
@@ -47,16 +44,11 @@ library(ringnet)
 libdir <- "PATH/TO/YOUR/USER/RLIB"   # change this
 dir.create(libdir, recursive = TRUE, showWarnings = FALSE)
 .libPaths(c(libdir, .libPaths()))
-
 install.packages("remotes", lib = libdir, repos = "https://cloud.r-project.org")
-
-remotes::install_github(
-  "Lancelof2019/ringnet",
-  lib = libdir,
-  dependencies = TRUE,
-  upgrade = "never"
-)
-
+remotes::install_github("laixn/RingNet",
+                        lib = libdir,
+                        dependencies = TRUE,
+                        upgrade = "never")
 library(ringnet, lib.loc = libdir)
 ```
 ## Inputs and Data Preparation
@@ -114,20 +106,18 @@ Build per-community node/edge maps from an interaction network and multi-omics m
 
 ****Usage****
 ```
-ringnet(
-  graph_edges,
-  graph_nodes,
-  node_group,
-  Data1  = NULL,
-  Data2  = NULL,
-  Data3  = NULL,
-  Data4  = NULL,
-  sample_group:  = NULL,
-  out_json,
-  TOP_N  = 100,
-  KEEP_DIRECTED = TRUE,
-  n_cores = max(1L, parallel::detectCores() - 1L)
-)
+ringnet(graph_edges,
+        graph_nodes,
+        node_group,
+        Data1  = NULL,
+        Data2  = NULL,
+        Data3  = NULL,
+        Data4  = NULL,
+        sample_group:  = NULL,
+        out_json,
+        TOP_N  = 100,
+        KEEP_DIRECTED = TRUE,
+        n_cores = max(1L, parallel::detectCores() - 1L))
 ```
 ****Arguments****
 
@@ -163,11 +153,8 @@ The function returns (invisibly) a list of per-community maps
 
 `Example:` Loading the ringnet lib.
 ```
-
 library(ringnet)
-
 cwd <- getwd()
-
 edges_path <- file.path(cwd, "data", "cellchat_edges_cell_level.csv")
 nodes_path <- file.path(cwd, "data", "cellchat_nodes.csv")
 nodegroup_path  <- file.path(cwd, "data", "cellchat_nodes_with_cellgroup.csv")
@@ -176,35 +163,29 @@ out_json   <- file.path(cwd, "data", "ringnet_community.json")
 ```
 `Example:` Basic run (expression only)
 ```
-library(ringnet)
-ringnet(
-  graph_edges   = edges_path,
-  graph_nodes   = nodes_path,
-  node_group = nodegroup_path,
-  Data1  = expression,
-  out_json = out_json,
-  TOP_N  = 200,
-  KEEP_DIRECTED = TRUE
-)
+ringnet(graph_edges   = edges_path,
+        graph_nodes   = nodes_path,
+        node_group = nodegroup_path,
+        Data1  = expression,
+        out_json = out_json,
+        TOP_N  = 200,
+        KEEP_DIRECTED = TRUE)
 ```
 
 `Example:` Multi-omics run (expression + methylation + SNV + CNV + stage)
 ```
-library(ringnet)
-ringnet(
-  `graph_edges`       = "data/edges.csv",
-  `graph_nodes`       = "data/nodes.csv",
-  `node_group`     = "data/membership.csv",
-  `Data1`  = "data/expression.csv",
-  `Data2` = "data/methylation.csv",
-  `Data3`        = "data/cnv.csv",
-  `Data4`         = "data/snv.csv",
-  `sample_group`       = "data/stage.csv",
-  `out_json`    = "output/ringnet_community.json",
-  `TOP_N`       = 150,
-  `KEEP_DIRECTED` = FALSE,
-  `n_cores`     = 8
-)
+ringnet( `graph_edges`       = "data/edges.csv",
+        `graph_nodes`       = "data/nodes.csv",
+        `node_group`     = "data/membership.csv",
+        `Data1`  = "data/expression.csv",
+        `Data2` = "data/methylation.csv",
+        `Data3`        = "data/cnv.csv",
+        `Data4`         = "data/snv.csv",
+        `sample_group`       = "data/stage.csv",
+        `out_json`    = "output/ringnet_community.json",
+        `TOP_N`       = 150,
+        `KEEP_DIRECTED` = FALSE,
+        `n_cores`     = 8)
 ```
 ### Notes on Behavior and Common Pitfalls ####
 
@@ -234,3 +215,22 @@ The output JSON is a list of communities, each containing:
 - `edges`: list of edges (source, target, weight, w_raw, w_norm, w_z, optional interact_id),w_raw is the `original` weight value, w_norm is `min-max` weight value, and w_z is the `z-score` weight value.
 
 -  This JSON is designed to be consumed by downstream JavaScript visualization code.
+
+## Usage & Citation 
+If you find our work useful, please consider citing it:
+
+Liang Zhang, Xin Lai. RingNet: an interactive platform for multi-modal data visualization in networks. 
+Submitted (2026).
+
+```bash
+@article{Zhang_RingNet_2025,
+  title={RingNet: an interactive platform for multi-modal data visualization in networks},
+  author={Liang Zhang, Fei Liu, Xin Lai},
+  journal={Submitted},
+  doi={},
+  year={2026}
+}
+```
+
+© [Lai Lab](https://sites.google.com/view/lai-lab) - This code is made available under the GPLv3 License and is available for non-commercial academic purposes.
+```
