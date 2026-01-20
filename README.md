@@ -1,4 +1,4 @@
-# RingNet: Community Map Builder for Multi-Omics Networks
+# RingNet: an interactive platform for multi-modal data visualization in networks
 RingNet is an R package for building *per-community or per-group node/edge* maps from an interaction network and one or more multi-omics matrices (`expression` / `methylation` / `SNV` / `CNV`). The package exports results as a `JSON` file that can be further customized and visualized using JavaScript.
 ## Overview
 The core function is ringnet(), which:
