@@ -1,5 +1,9 @@
 # RingNet: an interactive platform for multi-modal data visualization in networks
+
 RingNet is an R package for building *per-community or per-group node/edge* maps from an interaction network and one or more multi-omics matrices (`expression` / `methylation` / `SNV` / `CNV`). The package exports results as a `JSON` file that can be further customized and visualized using JavaScript.
+
+The web version of RingNet is accessible at https://fip-128-214-252-149.kaj.poutavm.fi/cmt_figures/. If you have any suggestions for improving RingNet, please feel free to contact us or report it in the repository.
+
 ## Overview
 The core function is ringnet(), which:
 
