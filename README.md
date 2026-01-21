@@ -5,7 +5,7 @@ RingNet is a tool for visualizing multi-modal data in networks. It supports crea
 If you have any suggestions for improving RingNet, please feel free to contact us or report it in the issues.
 
 ## Overview
-The core function is ringnet(), which:
+The core function is `ringnet`, which:
 
 - loads an interaction graph (edges + nodes),
 
@@ -99,7 +99,7 @@ A two-column CSV containing:a sample identifier column (name matching `sample`/`
 
 If provided, samples are ordered by stage/index before export. Each sample in the first column belongs to exactly one class in the second column. Multiple samples may belong to the same class, but no sample belongs to more than one class.
 
-## Main Function: ringnet()
+## Main Function: ringnet
 #### Description
 
 Build per-community node/edge maps from an interaction network and multi-omics matrices, then export JSON.
