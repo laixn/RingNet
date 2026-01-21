@@ -223,7 +223,7 @@ Liang Zhang, Xin Lai. RingNet: an interactive platform for multi-modal data visu
 Submitted (2026).
 
 ```bash
-@article{Zhang_RingNet_2025,
+@article{Zhang_RingNet_2026,
   title={RingNet: an interactive platform for multi-modal data visualization in networks},
   author={Liang Zhang, Fei Liu, Xin Lai},
   journal={Submitted},
