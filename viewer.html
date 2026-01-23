@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <html lang="en-US">
 <head>
-	<meta charset="UTF-8">
-	<title>Multi-omics Visulization</title>
-	  <script src="https://d3js.org/d3.v6.min.js"></script>
-      <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/svg2pdf.js@2.6.0/dist/svg2pdf.umd.min.js"></script>
+<meta charset="UTF-8">
+ <title>Multi-omics Visulization</title>
+  <script src="https://d3js.org/d3.v6.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/svg2pdf.js@2.6.0/dist/svg2pdf.umd.min.js"></script>
 
-<script>
-  // jsPDF 构造函数
+  <script> 
+  // jspdf creation function
   window.jsPDF = window.jspdf && window.jspdf.jsPDF;
 
-  // svg2pdf.umd.min.js 一般会导出一个对象，里面有 svg2pdf / default 函数
+  // svg2pdf.umd.min.js  include a object which has svg2pdf / default function
   (function () {
-    var lib = window.svg2pdf;   // 现在是 object
+    var lib = window.svg2pdf;   // object
     var fn  = null;
 
     if (typeof lib === 'function') {
@@ -24,17 +24,16 @@
       fn = lib.default;
     }
 
-    // 挂到一个明确的名字上，避免歧义
     if (fn) {
-      window.svg2pdfFn = fn;    // 你可以用这个名字
-      window.svg2pdf    = fn;   // 顺便覆盖原来的，兼容旧代码
+      window.svg2pdfFn = fn;    
+      window.svg2pdf    = fn;   
     }
 
     console.log('svg2pdf raw =', typeof lib);
     console.log('svg2pdfFn  =', typeof window.svg2pdfFn);
     console.log('jsPDF      =', typeof window.jsPDF);
   })();
-</script>
+  </script>
 
   <style>
     body {
@@ -96,11 +95,11 @@
       height: 40px;
     }
 	#networkViz {
-      cursor: grab;      /* 默认显示小手 */
+      cursor: grab;      /* hand symbol*/
      }
 
     #networkViz:active {
-      cursor: grabbing;  /* 鼠标按下拖动时，变成抓住的手 */
+      cursor: grabbing;  /* when the mouse goes down, the hand symbol will goes down */
     }
   </style>
 </head>
@@ -241,12 +240,9 @@
     let lastLayout = []; 
 	let layoutByCommunity = new Map();
     let currentCommId = null;
-    
-    // 这三个是全局保存的选择集，后面只改样式不再重建元素
     let nodeSel = null;          // d3 selection of g.node
     let edgeSelStraight = null;  // d3 selection of line.edge
     let edgeSelCurved = null;    // d3 selection of path.edge
-// 当前选中的 community id（下拉框的值）
     const viewWidth  = window.innerWidth;
     const viewHeight = window.innerHeight - 100;  
 
@@ -257,135 +253,96 @@
     const container = svg.append('g');
 	const scrollContainer = document.getElementById('networkContainer');
 	const zoom = d3.zoom()
-     .scaleExtent([0.2, 8]) // 自己按需要调缩放范围
+     .scaleExtent([0.2, 8]) // the range of zoom
      .on('zoom', (event) => {
-       // 所有平移、缩放都作用在 container <g> 上
+       // move zoom in are on container <g>
        container.attr('transform', event.transform);
      });
    
-   // 绑定 zoom 行为（让它有 transform 状态），然后立刻关掉所有鼠标触发
-    svg.call(zoom)
-      .on('wheel.zoom', null)       // 禁止滚轮缩放
-      .on('dblclick.zoom', null)    // 禁止双击缩放
-      //.on('mousedown.zoom', null)   // 禁止拖动画布
-      //.on('touchstart.zoom', null); // 禁止触摸缩放
-	window.zoomBehavior = zoom;
-	// === 鼠标按住拖动：平移整个视图（其实是改外层 div 的滚动条） ===
-/*if (scrollContainer) {
-  let isPanning = false;
-  let startX = 0;
-  let startY = 0;
-  let startScrollLeft = 0;
-  let startScrollTop = 0;
 
-  const svgNode = document.getElementById('networkViz');
+     svg.call(zoom)
+      .on('wheel.zoom', null)       // 禁止滚轮缩放 forbide zoom in with roll 
+      .on('dblclick.zoom', null)    // 禁止双击缩放 forbide zoom in by double click
 
-  svgNode.addEventListener('mousedown', (e) => {
-    // 只响应左键
-    if (e.button !== 0) return;
-    isPanning = true;
-    startX = e.clientX;
-    startY = e.clientY;
-    startScrollLeft = scrollContainer.scrollLeft;
-    startScrollTop = scrollContainer.scrollTop;
-    svgNode.style.cursor = 'grabbing';
-    e.preventDefault();  // 阻止选择文本等默认行为
-  });
-
-  window.addEventListener('mousemove', (e) => {
-    if (!isPanning) return;
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
-    // 鼠标往右拖，视图往右走 => scrollLeft 减 dx
-    scrollContainer.scrollLeft = startScrollLeft - dx;
-    scrollContainer.scrollTop  = startScrollTop  - dy;
-  });
-
-  window.addEventListener('mouseup', () => {
-    if (!isPanning) return;
-    isPanning = false;
-    const svgNode = document.getElementById('networkViz');
-    if (svgNode) svgNode.style.cursor = 'default';
-  });
-}*/
-
-    let colorConfig = {};
-	const INTERACT_COLORS = [
-      '#1f77b4','#ff7f0e','#2ca02c','#d62728','#9467bd',
-      '#8c564b','#e377c2','#7f7f7f','#bcbd22','#17becf',
-      '#393b79','#637939','#8c6d31','#843c39','#7b4173',
-      '#3182bd','#e6550d','#31a354','#756bb1','#636363',
-      '#6baed6','#fd8d3c','#74c476','#9e9ac8','#bdbdbd',
-      '#9ecae1','#fdae6b','#a1d99b','#bcbddc','#d9d9d9'
-    ];
-
-    // 是否启用 interact_id 模式
-    let useInteractMode = false;
-
-    // 每个 omics 自己的度量模式：raw / norm / zscore
-    const METRICS = ['raw', 'norm', 'zscore'];
-    let omicsMetric = {
-      exp: 'raw',
-      mty: 'raw',
-      snv: 'raw',
-      cnv: 'raw'
-    };
-	    function getColorScales() {
-	      // gene expression
-	      colorConfig.exp = d3.scaleLinear()
-	        .domain([-1, 0, 1])
-	        .range([
-	          d3.select('#expNeg').property('value'),
-	          d3.select('#expZero').property('value'),
-	          d3.select('#expPos').property('value')
-	        ]);
+	 window.zoomBehavior = zoom;
 	
-	      // methylation
-	      colorConfig.mty = d3.scaleLinear()
-	        .domain([-1, 0, 1])
-	        .range([
-	          d3.select('#mtyNeg').property('value'),
-	          d3.select('#mtyZero').property('value'),
-	          d3.select('#mtyPos').property('value')
-	        ]);
+     let colorConfig = {};
+	 const INTERACT_COLORS = [
+       '#1f77b4','#ff7f0e','#2ca02c','#d62728','#9467bd',
+       '#8c564b','#e377c2','#7f7f7f','#bcbd22','#17becf',
+       '#393b79','#637939','#8c6d31','#843c39','#7b4173',
+       '#3182bd','#e6550d','#31a354','#756bb1','#636363',
+       '#6baed6','#fd8d3c','#74c476','#9e9ac8','#bdbdbd',
+       '#9ecae1','#fdae6b','#a1d99b','#bcbddc','#d9d9d9'
+     ];
+     
+     // choose interact id model?
+     let useInteractMode = false;
+
+    // each omic value form ：raw / norm / zscore
+     const METRICS = ['raw', 'norm', 'zscore'];
+     let omicsMetric = {
+       exp: 'raw',
+       mty: 'raw',
+       snv: 'raw',
+       cnv: 'raw'
+     };
+	 function getColorScales() {
+	   // gene expression
+	   colorConfig.exp = d3.scaleLinear()
+	     .domain([-1, 0, 1])
+	     .range([
+	       d3.select('#expNeg').property('value'),
+	       d3.select('#expZero').property('value'),
+	       d3.select('#expPos').property('value')
+	     ]);
 	
-	      // Single Nucleotide Variant
-              colorConfig.snv = d3.scaleLinear()
-                 .domain([-1, 0, 1])
-                 .range([
-                      d3.select('#snvNeg').property('value'),
-                      d3.select('#snvZero').property('value'),
-                      d3.select('#snvPos').property('value')
-              ]);	
-	      // copy number variation 
-	      colorConfig.cnv = d3.scaleLinear()
-	        .domain([-1, 0, 1])
-	        .range([
-	          d3.select('#cnvNeg').property('value'),
-	          d3.select('#cnvZero').property('value'),
-	          d3.select('#cnvPos').property('value')
-	        ]);
+	   // methylation
+	   colorConfig.mty = d3.scaleLinear()
+	     .domain([-1, 0, 1])
+	     .range([
+	       d3.select('#mtyNeg').property('value'),
+	       d3.select('#mtyZero').property('value'),
+	       d3.select('#mtyPos').property('value')
+	     ]);
 	
-	      // edge
-	      colorConfig.edge = {
-	        neg:  d3.select('#edgeNeg').property('value'),
-	        zero: d3.select('#edgeZero').property('value'),
-	        pos:  d3.select('#edgePos').property('value')
-	      };
-	    }
+	   // Single Nucleotide Variant
+           colorConfig.snv = d3.scaleLinear()
+              .domain([-1, 0, 1])
+              .range([
+                   d3.select('#snvNeg').property('value'),
+                   d3.select('#snvZero').property('value'),
+                   d3.select('#snvPos').property('value')
+           ]);	
+	   // copy number variation 
+	   colorConfig.cnv = d3.scaleLinear()
+	     .domain([-1, 0, 1])
+	     .range([
+	       d3.select('#cnvNeg').property('value'),
+	       d3.select('#cnvZero').property('value'),
+	       d3.select('#cnvPos').property('value')
+	     ]);
+	
+	   // edge
+	   colorConfig.edge = {
+	     neg:  d3.select('#edgeNeg').property('value'),
+	     zero: d3.select('#edgeZero').property('value'),
+	     pos:  d3.select('#edgePos').property('value')
+	   };
+	 }
 	
 	
-	    const DEFAULT_STAGE_COLORS = [
-	      '#1f77b4', // 0
-	      '#d62728', // 1
-	      '#2ca02c', // 2
-	      '#ffbf00', // 3
-	      '#9467bd', // 4
-	      '#ff7f0e'  // 5
-	    ];
+	 const DEFAULT_STAGE_COLORS = [
+	   '#1f77b4', // 0
+	   '#d62728', // 1
+	   '#2ca02c', // 2
+	   '#ffbf00', // 3
+	   '#9467bd', // 4
+	   '#ff7f0e'  // 5
+	 ];
 	
-	  const STAGE_IDS = [0,1,2,3,4,5];
-	  const stageColorMap = new Map(STAGE_IDS.map(i => [i, DEFAULT_STAGE_COLORS[i]]));
+	const STAGE_IDS = [0,1,2,3,4,5];
+	const stageColorMap = new Map(STAGE_IDS.map(i => [i, DEFAULT_STAGE_COLORS[i]]));
 	
 	
 	function setStageColor(i, hex) {
@@ -470,77 +427,77 @@
 
   //load json file
 
-	  const sid = new URLSearchParams(location.search).get('sid') || '';
-	  const jsonPath = sid ? `uploads/${sid}/community_map_top100.json`: 'uploads/community_map_top100.json';
-	  fetch(jsonPath)
-	   .then(r => r.json())
-	   .then(json => {
-	    const dataArr = Array.isArray(json) ? json : Object.values(json);
-	    window.allCommunities = dataArr;
-	    const sel = d3.select('#commSelect');
-	    /* drop-down menu */
-	    dataArr.forEach(item => {
-	      sel.append('option')
-	         .attr('value', item.comm)
-	         .text(`Network ${item.comm}`);
-	    });
+	const sid = new URLSearchParams(location.search).get('sid') || '';
+	const jsonPath = sid ? `uploads/${sid}/community_map_top100.json`: 'uploads/community_map_top100.json';
+	fetch(jsonPath)
+	 .then(r => r.json())
+	 .then(json => {
+	  const dataArr = Array.isArray(json) ? json : Object.values(json);
+	  window.allCommunities = dataArr;
+	  const sel = d3.select('#commSelect');
+	  /* drop-down menu */
+	  dataArr.forEach(item => {
+	    sel.append('option')
+	       .attr('value', item.comm)
+	       .text(`Network ${item.comm}`);
+	  });
 	
 	
-	    sel.property('value', dataArr[0].comm);
-	    getColorScales();
-	    sel.on('change', renderCommunity);
-	    renderCommunity();                // initial render
+	  sel.property('value', dataArr[0].comm);
+	  getColorScales();
+	  sel.on('change', renderCommunity);
+	  renderCommunity();                // initial render
 	
-	    d3.selectAll('#degMin, #degMax').on('change', renderCommunity); 
-	  
-	    // Color picker change → redraw immediately 
-	   d3.selectAll('#colorPickers input[type="color"]').on('input', () => {
-	    getColorScales();
-        updateStyles();
-	   });
-	    d3.selectAll('#edgeNeg, #edgeZero, #edgePos').on('input', () => {
-	        getColorScales();
-            updateStyles();
-	   });
+	  d3.selectAll('#degMin, #degMax').on('change', renderCommunity); 
 	
-	
-	     // Edge metric switch (Raw/Norm/Z) → reset range + redraw
-	    d3.select('#edgeMetric').on('change', () => {
-	     if (!currentData) return;
-         setEdgeRangeInputs(currentData.edges);
-         updateStyles();
-	    });
-	
-	    // Edge range input change → redraw
-	    d3.selectAll('#eRangeMin, #eRangeMax').on('change', () => {
-	      updateStyles();
-	    });
-	
-	    // 'Filter edges' button → redraw
-	    d3.select('#edgeFilterBtn').on('click', () => {
-	       updateStyles();
-	    });
-	    const fitBtn = document.getElementById('fitBtn');
-	    if (fitBtn) fitBtn.onclick = () => fitToView();
-	
-	    const saveSVGBtn = document.getElementById('saveSVGBtn');
-	    if (saveSVGBtn) saveSVGBtn.onclick = () => saveSVG();
-	
-	    const savePDFBtn = document.getElementById('savePDFBtn');
-	    if (savePDFBtn) savePDFBtn.onclick = () => savePDF();
-	    const useInteractCheckbox = d3.select('#useInteract');
-        if (!useInteractCheckbox.empty()) {
-          useInteractCheckbox.on('change', function () {
-            useInteractMode = this.checked;
-            updateStyles();
-          });
-        }
-		     })
-	  .catch(err => console.error('JSON loading failed:', err));
+	  // Color picker change → redraw immediately 
+	 d3.selectAll('#colorPickers input[type="color"]').on('input', () => {
+	  getColorScales();
+      updateStyles();
+	 });
+	  d3.selectAll('#edgeNeg, #edgeZero, #edgePos').on('input', () => {
+	      getColorScales();
+          updateStyles();
+	 });
 	
 	
+	   // Edge metric switch (Raw/Norm/Z) → reset range + redraw
+	  d3.select('#edgeMetric').on('change', () => {
+	   if (!currentData) return;
+       setEdgeRangeInputs(currentData.edges);
+       updateStyles();
+	  });
 	
-	function setEdgeRangeInputs(edges) {
+	  // Edge range input change → redraw
+	  d3.selectAll('#eRangeMin, #eRangeMax').on('change', () => {
+	    updateStyles();
+	  });
+	
+	  // 'Filter edges' button → redraw
+	  d3.select('#edgeFilterBtn').on('click', () => {
+	     updateStyles();
+	  });
+	  const fitBtn = document.getElementById('fitBtn');
+	  if (fitBtn) fitBtn.onclick = () => fitToView();
+	
+	  const saveSVGBtn = document.getElementById('saveSVGBtn');
+	  if (saveSVGBtn) saveSVGBtn.onclick = () => saveSVG();
+	
+	  const savePDFBtn = document.getElementById('savePDFBtn');
+	  if (savePDFBtn) savePDFBtn.onclick = () => savePDF();
+	  const useInteractCheckbox = d3.select('#useInteract');
+      if (!useInteractCheckbox.empty()) {
+        useInteractCheckbox.on('change', function () {
+          useInteractMode = this.checked;
+          updateStyles();
+        });
+      }
+	    })
+	.catch(err => console.error('JSON loading failed:', err));
+	
+	
+	
+	 function setEdgeRangeInputs(edges) {
 	  const metric = d3.select('#edgeMetric').property('value');
 	  const toNum = v => {
 	    if (Array.isArray(v)) v = v[0];
@@ -565,160 +522,157 @@
 
     // render the specific communtiy
   
-// === 只在切换 network / 改 degree range 时重建数据 + 跑布局 ===
-function renderCommunity() {
+    // when switching network or change degree range, it can be used to create new layout
+     function renderCommunity() {
 
-  console.log('renderCommunity called');
-  const id = d3.select('#commSelect').property('value');
+      console.log('renderCommunity called');
+      const id = d3.select('#commSelect').property('value');
+      
+      if (currentCommId && lastLayout.length) {
+        layoutByCommunity.set(currentCommId, lastLayout.slice());
+      }
+      currentCommId = id;
+      
+      const dmin = +d3.select('#degMin').property('value');
+      const dmax = +d3.select('#degMax').property('value');
+      
+      const raw = window.allCommunities.find(d => String(d.comm) === id);
+      if (!raw) {
+        console.warn('community does not exist:', id);
+        return;
+      }
+    
+   
+      function getId(v) {
+        if (Array.isArray(v)) return getId(v[0]);
+        if (typeof v === 'object' && v !== null) return getId(v.id);
+        return String(v);
+      }
+      
+      const nodesById = new Map(
+        raw.nodes.map(n => [ getId(n.id), n ])
+      );
+      
+      // 1. core node in range [dmin, dmax]
+      const inRangeIds = new Set(
+        raw.nodes
+          .filter(n => n.degree >= dmin && n.degree <= dmax)
+          .map(n => getId(n.id))
+      );
+      
+      // 2. High-order neighbors: nodes with degree > dmax that are connected by at least one edge to a core node.
+      const highNeighborIds = new Set();
 
-  // —— 保存当前 community 的布局 —— 
-  if (currentCommId && lastLayout.length) {
-    layoutByCommunity.set(currentCommId, lastLayout.slice());
-  }
-  currentCommId = id;
+      raw.edges.forEach(e => {
+      const sId = getId(e.source);
+      const tId = getId(e.target);
+      const sNode = nodesById.get(sId);
+      const tNode = nodesById.get(tId);
+      if (!sNode || !tNode) return;
+     
+      const sIn = inRangeIds.has(sId);
+      const tIn = inRangeIds.has(tId);
+       
+      if (sIn && tNode.degree > dmax) highNeighborIds.add(tId);
+      if (tIn && sNode.degree > dmax) highNeighborIds.add(sId);
+      });
 
-  const dmin = +d3.select('#degMin').property('value');
-  const dmax = +d3.select('#degMax').property('value');
+      // 3. The set of nodes to be retained: the union of core nodes and high-order neighbors
+      const usedIdSet = new Set([...inRangeIds, ...highNeighborIds]);
+      
+      const nodesUsed = raw.nodes.filter(n => {
+      const nid = getId(n.id);
+      return usedIdSet.has(nid);
+      });
+    
+    // 4. Edges to be retained:
+    //    - both endpoints are in usedIdSet
+    //    - and at least one endpoint is in inRangeIds (must be adjacent to a core node)
+      const edgesUsed = raw.edges.filter(e => {
+        const sId = getId(e.source);
+        const tId = getId(e.target);
+      
+        if (!usedIdSet.has(sId) || !usedIdSet.has(tId)) return false;
+        return inRangeIds.has(sId) || inRangeIds.has(tId);
+      });
+      
+      const data = {
+        nodes: nodesUsed,
+        edges: edgesUsed
+      };
+      
+      console.log(
+      'degRange =', dmin, dmax,
+      'coreNodes =', inRangeIds.size,
+      'highNeighbors =', highNeighborIds.size,
+      'nodesUsed =', nodesUsed.length,
+      'edgesUsed =', edgesUsed.length
+      );
+    
+     const savedLayout = layoutByCommunity.get(id);
+     if (savedLayout && savedLayout.length) {
+       const layoutMap = new Map(savedLayout.map(p => [String(p.id), p]));
+       data.nodes.forEach(n => {
+         const nid = String(Array.isArray(n.id) ? n.id[0] : n.id);
+         const p = layoutMap.get(nid);
+         if (p) { n.x = p.x; n.y = p.y; }
+       });
+     } else {
+       computeLayoutOnce(data);  
+       const layout = data.nodes.map(n => ({
+         id: String(Array.isArray(n.id) ? n.id[0] : n.id),
+         x: n.x,
+         y: n.y
+       }));
+       layoutByCommunity.set(id, layout);
+     }
+    
+     currentData = data;
+     lastLayout = (layoutByCommunity.get(id) || []).slice();
+    
+     updateValueRangeInputs(data.nodes);
+     renderStageLegend();
+     setEdgeRangeInputs(data.edges);
+    
+     buildNetwork(data);
+    
 
-  const raw = window.allCommunities.find(d => String(d.comm) === id);
-  if (!raw) {
-    console.warn('community does not exist:', id);
-    return;
-  }
-
-  // 小工具：统一把 id 变成字符串，处理数组/object 的情况
-  function getId(v) {
-    if (Array.isArray(v)) return getId(v[0]);
-    if (typeof v === 'object' && v !== null) return getId(v.id);
-    return String(v);
-  }
-
-  const nodesById = new Map(
-    raw.nodes.map(n => [ getId(n.id), n ])
-  );
-
-  // 1. 核心节点：度在 [dmin, dmax] 里的节点
-  const inRangeIds = new Set(
-    raw.nodes
-      .filter(n => n.degree >= dmin && n.degree <= dmax)
-      .map(n => getId(n.id))
-  );
-
-  // 2. 高阶邻居：度 > dmax，并且和“核心节点”有边相连
-  const highNeighborIds = new Set();
-
-  raw.edges.forEach(e => {
-    const sId = getId(e.source);
-    const tId = getId(e.target);
-    const sNode = nodesById.get(sId);
-    const tNode = nodesById.get(tId);
-    if (!sNode || !tNode) return;
-
-    const sIn = inRangeIds.has(sId);
-    const tIn = inRangeIds.has(tId);
-
-    // 核心 → 高度
-    if (sIn && tNode.degree > dmax) highNeighborIds.add(tId);
-    if (tIn && sNode.degree > dmax) highNeighborIds.add(sId);
-  });
-
-  // 3. 要保留的所有节点： 核心节点 ∪ 高阶邻居
-  const usedIdSet = new Set([...inRangeIds, ...highNeighborIds]);
-
-  const nodesUsed = raw.nodes.filter(n => {
-    const nid = getId(n.id);
-    return usedIdSet.has(nid);
-  });
-
-  // 4. 要保留的边：
-  //    - 两端都在 usedIdSet 中
-  //    - 且至少一端在 inRangeIds（必须挨着“核心”）
-  const edgesUsed = raw.edges.filter(e => {
-    const sId = getId(e.source);
-    const tId = getId(e.target);
-
-    if (!usedIdSet.has(sId) || !usedIdSet.has(tId)) return false;
-    return inRangeIds.has(sId) || inRangeIds.has(tId);
-  });
-
-  const data = {
-    nodes: nodesUsed,
-    edges: edgesUsed
-  };
-
-  console.log(
-    'degRange =', dmin, dmax,
-    'coreNodes =', inRangeIds.size,
-    'highNeighbors =', highNeighborIds.size,
-    'nodesUsed =', nodesUsed.length,
-    'edgesUsed =', edgesUsed.length
-  );
-
-  // ===== 下面保持你原来的代码不动 =====
-  const savedLayout = layoutByCommunity.get(id);
-  if (savedLayout && savedLayout.length) {
-    const layoutMap = new Map(savedLayout.map(p => [String(p.id), p]));
-    data.nodes.forEach(n => {
-      const nid = String(Array.isArray(n.id) ? n.id[0] : n.id);
-      const p = layoutMap.get(nid);
-      if (p) { n.x = p.x; n.y = p.y; }
-    });
-  } else {
-    computeLayoutOnce(data);  // 只在第一次 / degree 改变时跑一次
-    const layout = data.nodes.map(n => ({
-      id: String(Array.isArray(n.id) ? n.id[0] : n.id),
-      x: n.x,
-      y: n.y
-    }));
-    layoutByCommunity.set(id, layout);
-  }
-
-  currentData = data;
-  lastLayout = (layoutByCommunity.get(id) || []).slice();
-
-  updateValueRangeInputs(data.nodes);
-  renderStageLegend();
-  setEdgeRangeInputs(data.edges);
-
-  buildNetwork(data);
-}
-
-
-// 只在切换 network / 改 degree range 时调用，用 force 算一次布局
-function computeLayoutOnce(data) {
-  const svg = d3.select('#networkViz');
-  const width  = +svg.attr('width')  || 1000;
-  const height = +svg.attr('height') || 700;
-
-  const nodes = data.nodes;
-  const edges = data.edges;
-
-  function getId(v) {
-    if (Array.isArray(v)) return getId(v[0]);
-    if (typeof v === 'object' && v !== null) return getId(v.id);
-    return String(v);
-  }
-
-  const sim = d3.forceSimulation(nodes)
-    .force('link',   d3.forceLink(edges).id(d => getId(d.id)).distance(100))
-    .force('charge', d3.forceManyBody().strength(-120))
-    .force('center', d3.forceCenter(width / 2, height / 2))
-    .alphaDecay(0.05)
-    .velocityDecay(0.9)
-    .alphaMin(0.001);
-
-  // tick 多一点让布局稳定一点
-  for (let i = 0; i < 200; ++i) sim.tick();
-  sim.stop();
-
-  // 防止个别节点没坐标
-  nodes.forEach((n, i) => {
-    if (typeof n.x !== 'number' || typeof n.y !== 'number') {
-      n.x = width  / 2 + 100 * Math.cos(2 * Math.PI * i / nodes.length);
-      n.y = height / 2 + 100 * Math.sin(2 * Math.PI * i / nodes.length);
+    // Invoked only upon network changes or degree range updates;
+    // performs a single force-based layout computation.
+    function computeLayoutOnce(data) {
+      const svg = d3.select('#networkViz');
+      const width  = +svg.attr('width')  || 1000;
+      const height = +svg.attr('height') || 700;
+    
+      const nodes = data.nodes;
+      const edges = data.edges;
+    
+      function getId(v) {
+        if (Array.isArray(v)) return getId(v[0]);
+        if (typeof v === 'object' && v !== null) return getId(v.id);
+        return String(v);
+      }
+    
+      const sim = d3.forceSimulation(nodes)
+        .force('link',   d3.forceLink(edges).id(d => getId(d.id)).distance(100))
+        .force('charge', d3.forceManyBody().strength(-120))
+        .force('center', d3.forceCenter(width / 2, height / 2))
+        .alphaDecay(0.05)
+        .velocityDecay(0.9)
+        .alphaMin(0.001);
+    
+      // tick 
+      for (let i = 0; i < 200; ++i) sim.tick();
+      sim.stop();
+    
+      // aviod some nodes don' include coordinates
+      nodes.forEach((n, i) => {
+        if (typeof n.x !== 'number' || typeof n.y !== 'number') {
+          n.x = width  / 2 + 100 * Math.cos(2 * Math.PI * i / nodes.length);
+          n.y = height / 2 + 100 * Math.sin(2 * Math.PI * i / nodes.length);
+        }
+      });
     }
-  });
-}
 
 
 
@@ -755,7 +709,7 @@ function computeLayoutOnce(data) {
       d3.select('#rangeMin').property('value', vmin.toFixed(2));
       d3.select('#rangeMax').property('value', vmax.toFixed(2));
 
-      // 给当前 omics 更新颜色 scale
+      // omics update scale
       const colorScale = d3.scaleLinear()
         .domain([vmin, vzero, vmax])
         .range([
@@ -767,8 +721,7 @@ function computeLayoutOnce(data) {
     }
 
     
-// add listener to monitor the change
-    // 当切换 Data1/2/3/4 时：同步该 Data 的 dataType，并重绘
+
     d3.select('#omicsType').on('change', () => {
       const omicsType = d3.select('#omicsType').property('value');
       const metric = omicsMetric[omicsType] || 'raw';
@@ -779,7 +732,7 @@ function computeLayoutOnce(data) {
       }
     });
 
-    // 当修改 Data Norm（Raw/Norm/Z-score）时：只影响当前选中的 DataX
+  
    d3.select('#dataType').on('change', () => {
      const omicsType = d3.select('#omicsType').property('value');
      const metric = d3.select('#dataType').property('value');
@@ -791,773 +744,708 @@ function computeLayoutOnce(data) {
    })
   
   
-function buildNetwork(data) {
-  getColorScales();
-
-  function getId(v) {
-    if (Array.isArray(v)) return getId(v[0]);
-    if (typeof v === 'object' && v !== null) return getId(v.id);
-    return String(v);
-  }
-
-  const svg = d3.select('#networkViz');
-  container.selectAll('*').remove();
-  const width  = +svg.attr('width')  || 1000;
-  const height = +svg.attr('height') || 700;
-
-  const nodes = data.nodes;
-  if (!nodes.length) {
-    nodeSel = edgeSelStraight = edgeSelCurved = null;
-    return;
-  }
-
-  const nodeIds  = new Set(nodes.map(d => String(Array.isArray(d.id) ? d.id[0] : d.id)));
-  const nodeById = new Map(nodes.map(d => [String(Array.isArray(d.id) ? d.id[0] : d.id), d]));
-
-  // 先把 edges 过滤到当前节点集
-  const edges = data.edges
-    .map(e => ({
-      ...e,
-      source: getId(e.source),
-      target: getId(e.target)
-    }))
-    .filter(e => nodeIds.has(e.source) && nodeIds.has(e.target));
-
-  // =========================
-  // 1. 多重边分组（按无向对）
-  // =========================
-  const pairMap = new Map();  // key = "A|B"（A,B 排序后拼起来）
-
-  edges.forEach(e => {
-    const key = [e.source, e.target].sort().join('|');  // 无向对
-    if (!pairMap.has(key)) pairMap.set(key, []);
-    pairMap.get(key).push(e);
-  });
-
-  // 给每条边打上：属于这个 pair 的第几条、总共有几条
-  pairMap.forEach(list => {
-    const total = list.length;
-    list.forEach((e, idx) => {
-      e._idx   = idx;    // 0,1,2,...
-      e._total = total;  // 这一对节点的总边数
-    });
-  });
-
-  // 单边 / 多边分开画：多边用曲线，单边用直线
-  const straight = edges.filter(d => d._total === 1);
-  const curved   = edges.filter(d => d._total > 1);
-
-  // 画边
-  edgeSelStraight = container.selectAll('line.edge')
-    .data(straight)
-    .enter().append('line')
-    .attr('class', 'edge')
-    .attr('marker-end', 'url(#arrow)');
-
-  edgeSelCurved = container.selectAll('path.edge')
-    .data(curved)
-    .enter().append('path')
-    .attr('class', 'edge')
-    .attr('fill', 'none')
-    .attr('marker-end', 'url(#arrow)');
-
-  // 画节点 group（下面这块你原来的逻辑不动）
-  const barW = 4, gap = 2;
-  const sampleCount = nodes[0].exp_vals.length;
-  const angleStep   = 2 * Math.PI / sampleCount;
-
-  nodeSel = container.selectAll('g.node')
-    .data(nodes)
-    .enter().append('g')
-    .attr('class', 'node');
-
-  nodeSel.call(d3.drag()
-    .on('start', (event, d) => {
-      d.fx = d.x; d.fy = d.y;
-    })
-    .on('drag', (event, d) => {
-      d.fx = event.x; d.fy = event.y;
-      d.x  = event.x; d.y = event.y;
-      ticked();
-    })
-    .on('end', (event, d) => {
-      d.fx = d.x; d.fy = d.y;
-      const idStr = String(Array.isArray(d.id) ? d.id[0] : d.id);
-
-      const idx = lastLayout.findIndex(p => p.id === idStr);
-      if (idx >= 0) {
-        lastLayout[idx].x = d.x;
-        lastLayout[idx].y = d.y;
-      } else {
-        lastLayout.push({ id: idStr, x: d.x, y: d.y });
-      }
-
-      const original = data.nodes.find(n => {
-        const nid = String(Array.isArray(n.id) ? n.id[0] : n.id);
-        return nid === idStr;
-      });
-      if (original) {
-        original.x = d.x;
-        original.y = d.y;
-      }
-
-      if (currentCommId) {
-        layoutByCommunity.set(currentCommId, lastLayout.slice());
-      }
-    })
-  );
-
-  // =========================
-  // 2. ticked：更新几何位置
-  //    直线：照常
-  //    多重边：用「统一法向量 + _idx」来分配弯曲度
-  // =========================
-  function ticked() {
-    if (!edgeSelStraight || !edgeSelCurved || !nodeSel) return;
-
-    // 直线边
-    edgeSelStraight
-      .attr('x1', d => nodeById.get(d.source)?.x ?? 0)
-      .attr('y1', d => nodeById.get(d.source)?.y ?? 0)
-      .attr('x2', d => nodeById.get(d.target)?.x ?? 0)
-      .attr('y2', d => nodeById.get(d.target)?.y ?? 0);
-
-    // 曲线边（多重边）
-    const baseOffset = 20;  // 每条边之间的“间距”，可以按需要调大/调小
-
-    edgeSelCurved
-      .attr('d', d => {
-        const s = nodeById.get(d.source);
-        const t = nodeById.get(d.target);
-        if (!s || !t) return '';
-
-        // —— 找到这条边所属的无向 pair —— 
-        const key = [d.source, d.target].sort().join('|');
-        const nodesKey = key.split('|');
-        const a = nodeById.get(nodesKey[0]); // 无向对里“左边那个”节点
-        const b = nodeById.get(nodesKey[1]); // 无向对里“右边那个”节点
-        if (!a || !b) {
-          // 兜底：如果出错就画成直线
-          return `M${s.x},${s.y} L${t.x},${t.y}`;
-        }
-
-        // —— 用统一方向 a→b 计算法向量（所有边都用同一个 normal）——
-        const dx  = b.x - a.x;
-        const dy  = b.y - a.y;
-        const len = Math.sqrt(dx * dx + dy * dy) || 1;
-        const nx = -dy / len;   // 统一法向量
-        const ny =  dx / len;
-
-        // —— 用 _idx 把多条边均匀摊在两边 —— 
-        // 例如 total = 2 → k = -0.5, +0.5（两侧）
-        //     total = 3 → k = -1, 0, +1（中间 + 两侧）
-        const k = d._idx - (d._total - 1) / 2;
-        const offset = baseOffset * k;
-
-        // 控制点在 s,t 的中点附近沿法向量偏移
-        const mx = (s.x + t.x) / 2;
-        const my = (s.y + t.y) / 2;
-        const cx = mx + nx * offset;
-        const cy = my + ny * offset;
-
-        return `M${s.x},${s.y} Q${cx},${cy} ${t.x},${t.y}`;
-      });
-
-    // 节点位置
-    nodeSel.attr('transform', d => `translate(${d.x},${d.y})`);
-  }
-
-  ticked();
-
-  // 颜色等样式还是交给原来的 updateStyles
-  updateStyles();
-}
-
-
-function updateStyles() {
-  if (!currentData || !nodeSel) return;
-  getColorScales();
-
-  function getId(v) {
-    if (Array.isArray(v)) return getId(v[0]);
-    if (typeof v === 'object' && v !== null) return getId(v.id);
-    return String(v);
-  }
-
-  const omicsType = d3.select('#omicsType').property('value');
-  const metricForSelected = omicsMetric[omicsType] || 'raw';
-  const rmin = +d3.select('#rangeMin').property('value');
-  const rmax = +d3.select('#rangeMax').property('value');
-
-  // 节点高亮标志
-  currentData.nodes.forEach(n => {
-    const suffix =
-      metricForSelected === 'zscore' ? 'z' :
-      metricForSelected === 'norm'   ? 'norm' :
-                                       'vals';
-    const key = `${omicsType}_${suffix}`;
-    const vals = n[key];
-    n._highlight = Array.isArray(vals) && vals.some(v => v >= rmin && v <= rmax);
-  });
-
-  const edgeMetric = d3.select('#edgeMetric').property('value');
-  let eMin = +d3.select('#eRangeMin').property('value');
-  let eMax = +d3.select('#eRangeMax').property('value');
-  if (Number.isFinite(eMin) && Number.isFinite(eMax) && eMin > eMax) [eMin, eMax] = [eMax, eMin];
-
-  const toNum = v => {
-    if (Array.isArray(v)) v = v[0];
-    const n = +v;
-    return Number.isFinite(n) ? n : NaN;
-  };
-
-  const C_NEG  = d3.select('#edgeNeg').property('value')  || '#0000FF';
-  const C_ZERO = d3.select('#edgeZero').property('value') || '#FFFFFF';
-  const C_POS  = d3.select('#edgePos').property('value')  || '#FF0000';
-
-  const negScale = d3.scaleLinear().domain([eMin, 0]).range([C_NEG,  C_ZERO]).clamp(true);
-  const posScale = d3.scaleLinear().domain([0,    eMax]).range([C_ZERO, C_POS]).clamp(true);
-
-  const allEdges = [...(edgeSelStraight?.data() || []), ...(edgeSelCurved?.data() || [])];
-  allEdges.forEach(e => {
-    const metW = toNum(e?.[edgeMetric]);
-    const rawW = toNum(e?.weight);
-    const safeW = Number.isFinite(metW) ? metW : (Number.isFinite(rawW) ? rawW : 0);
-    e._w = safeW;
-    e._inRange = (safeW >= eMin && safeW <= eMax);
-  });
-
-  const visibleEdges = allEdges.filter(e => e._inRange);
-
-  // interact 模式
-  let interactColorById = null;
-  let interactOpacityScale = null;
-  if (useInteractMode) {
-    const filteredEdgesWithId = visibleEdges.filter(e =>
-      e.interact_id !== undefined &&
-      e.interact_id !== null &&
-      e.interact_id !== ''
-    );
-
-    const ids = Array.from(new Set(filteredEdgesWithId.map(e => e.interact_id)));
-    const colorScale = d3.scaleSequential()
-      .domain([0, ids.length - 1])
-      .interpolator(d3.interpolateRainbow);
-
-    interactColorById = new Map();
-    ids.forEach((id, i) => {
-      interactColorById.set(id, colorScale(i));
-    });
-
-    const absVals = filteredEdgesWithId.map(e => Math.abs(e._w)).filter(Number.isFinite);
-    if (absVals.length) {
-      const wMin = d3.min(absVals);
-      const wMax = d3.max(absVals);
-      interactOpacityScale = d3.scaleLinear()
-        .domain([wMin, wMax])
-        .range([0.3, 1.0])
-        .clamp(true);
+   function buildNetwork(data) {
+     getColorScales();
+   
+     function getId(v) {
+       if (Array.isArray(v)) return getId(v[0]);
+       if (typeof v === 'object' && v !== null) return getId(v.id);
+       return String(v);
+     }
+   
+     const svg = d3.select('#networkViz');
+     container.selectAll('*').remove();
+     const width  = +svg.attr('width')  || 1000;
+     const height = +svg.attr('height') || 700;
+   
+     const nodes = data.nodes;
+     if (!nodes.length) {
+       nodeSel = edgeSelStraight = edgeSelCurved = null;
+       return;
+     }
+   
+     const nodeIds  = new Set(nodes.map(d => String(Array.isArray(d.id) ? d.id[0] : d.id)));
+     const nodeById = new Map(nodes.map(d => [String(Array.isArray(d.id) ? d.id[0] : d.id), d]));
+   
+   // First filter edges to the current node set.
+     const edges = data.edges
+       .map(e => ({
+         ...e,
+         source: getId(e.source),
+         target: getId(e.target)
+       }))
+       .filter(e => nodeIds.has(e.source) && nodeIds.has(e.target));
+   
+     // =========================
+     // 1. Group multiple edges (by undirected pairs)
+     // =========================
+     const pairMap = new Map();  // Key = "A|B" (constructed by concatenating sorted A and B)
+   
+     edges.forEach(e => {
+       const key = [e.source, e.target].sort().join('|');  // undirected pair
+       if (!pairMap.has(key)) pairMap.set(key, []);
+       pairMap.get(key).push(e);
+     });
+   
+     // Annotate each edge with its index within the pair and the total count.
+     pairMap.forEach(list => {
+       const total = list.length;
+       list.forEach((e, idx) => {
+         e._idx   = idx;    // 0,1,2,...
+         e._total = total;  // total edges of the pair
+       });
+     });
+   
+     // Draw edges:
+     //   draw multiple edges as curves and single edges as straight lines.
+     const straight = edges.filter(d => d._total === 1);
+     const curved   = edges.filter(d => d._total > 1);
+   
+     //edges drew
+     edgeSelStraight = container.selectAll('line.edge')
+       .data(straight)
+       .enter().append('line')
+       .attr('class', 'edge')
+       .attr('marker-end', 'url(#arrow)');
+   
+     edgeSelCurved = container.selectAll('path.edge')
+       .data(curved)
+       .enter().append('path')
+       .attr('class', 'edge')
+       .attr('fill', 'none')
+       .attr('marker-end', 'url(#arrow)');
+   
+     // draw node group
+     const barW = 4, gap = 2;
+     const sampleCount = nodes[0].exp_vals.length;
+     const angleStep   = 2 * Math.PI / sampleCount;
+   
+     nodeSel = container.selectAll('g.node')
+       .data(nodes)
+       .enter().append('g')
+       .attr('class', 'node');
+   
+     nodeSel.call(d3.drag()
+       .on('start', (event, d) => {
+         d.fx = d.x; d.fy = d.y;
+       })
+       .on('drag', (event, d) => {
+         d.fx = event.x; d.fy = event.y;
+         d.x  = event.x; d.y = event.y;
+         ticked();
+       })
+       .on('end', (event, d) => {
+         d.fx = d.x; d.fy = d.y;
+         const idStr = String(Array.isArray(d.id) ? d.id[0] : d.id);
+   
+         const idx = lastLayout.findIndex(p => p.id === idStr);
+         if (idx >= 0) {
+           lastLayout[idx].x = d.x;
+           lastLayout[idx].y = d.y;
+         } else {
+           lastLayout.push({ id: idStr, x: d.x, y: d.y });
+         }
+   
+         const original = data.nodes.find(n => {
+           const nid = String(Array.isArray(n.id) ? n.id[0] : n.id);
+           return nid === idStr;
+         });
+         if (original) {
+           original.x = d.x;
+           original.y = d.y;
+         }
+   
+         if (currentCommId) {
+           layoutByCommunity.set(currentCommId, lastLayout.slice());
+         }
+       })
+     );
+   
+     // =========================
+     // 2. ticked: update geometry
+     //    - straight edges: standard update
+     //    - parallel edges: distribute curvature via a common normal vector and _idx
+     // =========================
+     function ticked() {
+       if (!edgeSelStraight || !edgeSelCurved || !nodeSel) return;
+   
+       // Straight edges
+       edgeSelStraight
+         .attr('x1', d => nodeById.get(d.source)?.x ?? 0)
+         .attr('y1', d => nodeById.get(d.source)?.y ?? 0)
+         .attr('x2', d => nodeById.get(d.target)?.x ?? 0)
+         .attr('y2', d => nodeById.get(d.target)?.y ?? 0);
+   
+       // Curved edges (multiple edges)
+       const baseOffset = 20;  // Spacing between edges (can be adjusted as needed)
+   
+       edgeSelCurved
+         .attr('d', d => {
+           const s = nodeById.get(d.source);
+           const t = nodeById.get(d.target);
+           if (!s || !t) return '';
+   
+           // — Find the undirected pair this edge belongs to —
+           const key = [d.source, d.target].sort().join('|');
+           const nodesKey = key.split('|');
+           const a = nodeById.get(nodesKey[0]); // The "left" node in the undirected pair
+           const b = nodeById.get(nodesKey[1]); // The "right" node in the undirected pair
+           if (!a || !b) {
+             // Fallback: draw as a straight line if anything goes wrong
+             return `M${s.x},${s.y} L${t.x},${t.y}`;
+           }
+   
+           // — Compute the normal vector using a unified direction a → b (shared by all edges) —
+           const dx  = b.x - a.x;
+           const dy  = b.y - a.y;
+           const len = Math.sqrt(dx * dx + dy * dy) || 1;
+           const nx = -dy / len;   // Common normal vector
+           const ny =  dx / len;
+   
+           // — Distribute parallel edges symmetrically using _idx —
+           // eg. total = 2 → k = -0.5, +0.5
+           //     total = 3 → k = -1, 0, +1
+           const k = d._idx - (d._total - 1) / 2;
+           const offset = baseOffset * k;
+   
+           // Offset the control point from the midpoint of s and t along the normal
+           const mx = (s.x + t.x) / 2;
+           const my = (s.y + t.y) / 2;
+           const cx = mx + nx * offset;
+           const cy = my + ny * offset;
+   
+           return `M${s.x},${s.y} Q${cx},${cy} ${t.x},${t.y}`;
+         });
+   
+       // Node positions
+       nodeSel.attr('transform', d => `translate(${d.x},${d.y})`);
+     }
+   
+     ticked();
+   
+    // Colors and other styles are still handled by the original updateStyles.
+     updateStyles();
     }
-  }
-
-const GREY_OUT = '#DDDDDD';
-
-// 基于边的权重决定颜色：负 -> negColor, 0 -> zeroColor, 正 -> posColor
-function baseWeightColor(d) {
-  const v = d._w;
-  if (!Number.isFinite(v)) return '#CCCCCC';
-  if (v === 0) return C_ZERO;
-  return v < 0 ? negScale(v) : posScale(v);
-}
-
-// 边的颜色：先看是否在 range 内，再看是否是 interact 模式
-function edgeStroke(d) {
-  // 不在数值范围内直接灰掉
-  if (!d._inRange) return GREY_OUT;
-
-  // interact 模式：用 interact_id 的颜色（如果没有 id，就回退到权重颜色）
-  if (useInteractMode) {
-    const c = interactColorById?.get(d.interact_id);
-    return c || baseWeightColor(d);
-  }
-
-  // 默认模式：完全按权重上色
-  return baseWeightColor(d);
-}
-
-// 边透明度：range 外很淡；interact 模式按权重调透明度；默认给一个较稳定的值
-function edgeOpacity(d) {
-  if (!d._inRange) return 0.12;
-
-  if (useInteractMode && interactOpacityScale && interactColorById?.has(d.interact_id)) {
-    const v = Math.abs(d._w);
-    return interactOpacityScale(v);
-  }
-
-  // 默认模式：给一个中等偏高的透明度
-  return 0.7;
-}
 
 
-  const maxAbsW = d3.max(visibleEdges, e => Math.abs(e._w)) || 1;
-  const sw = v => Math.max(0.5, 1.5 * Math.sqrt(Math.abs(v || 0)));
-  const CONST_SW = Math.max(2.5, sw(maxAbsW))*0.75;
-
-  if (edgeSelStraight) {
-    edgeSelStraight
-      .attr('stroke-width', CONST_SW)
-      .attr('stroke', d => edgeStroke(d))
-      .attr('opacity', d => edgeOpacity(d));
-  }
-  if (edgeSelCurved) {
-    edgeSelCurved
-      .attr('stroke-width', CONST_SW)
-      .attr('stroke', d => edgeStroke(d))
-      .attr('opacity', d => edgeOpacity(d));
-  }
-
-  // 环 + label 的颜色（和原来 drawNetwork 中的一样）
-  nodeSel.each(function(nodeDatum) {
-    const omicsTypeSelected = d3.select('#omicsType').property('value');
-    const rmin = +d3.select('#rangeMin').property('value');
-    const rmax = +d3.select('#rangeMax').property('value');
-
-    const barW = 4, gap = 2;
-    const sampleCount = nodeDatum.exp_vals.length;
-    const angleStep   = 2 * Math.PI / sampleCount;
-
-    const ringDefs = [
-      { type: 'snv',  inner: barW + gap },
-      { type: 'cnv',  inner: 2 * (barW + gap) },
-      { type: 'mty',  inner: 3 * (barW + gap) },
-      { type: 'exp',  inner: 4 * (barW + gap) },
-      { type: 'stage',inner: 5 * (barW + gap) }
-    ];
-
-    const rings = ringDefs.map(r => {
-      if (r.type === 'stage') {
-        return { ...r, vals: nodeDatum.stage_idx, scale: null };
+    function updateStyles() {
+      if (!currentData || !nodeSel) return;
+      getColorScales();
+    
+      function getId(v) {
+        if (Array.isArray(v)) return getId(v[0]);
+        if (typeof v === 'object' && v !== null) return getId(v.id);
+        return String(v);
       }
-      const metric = omicsMetric[r.type] || 'raw';
-      const suffix = metric === 'zscore' ? '_z'
-                    : metric === 'norm'  ? '_norm'
-                    : '_vals';
-      return {
-        ...r,
-        metric,
-        vals: nodeDatum[r.type + suffix],
-        scale: colorConfig[r.type]
+    
+      const omicsType = d3.select('#omicsType').property('value');
+      const metricForSelected = omicsMetric[omicsType] || 'raw';
+      const rmin = +d3.select('#rangeMin').property('value');
+      const rmax = +d3.select('#rangeMax').property('value');
+    
+      // 节点高亮标志
+      currentData.nodes.forEach(n => {
+        const suffix =
+          metricForSelected === 'zscore' ? 'z' :
+          metricForSelected === 'norm'   ? 'norm' :
+                                           'vals';
+        const key = `${omicsType}_${suffix}`;
+        const vals = n[key];
+        n._highlight = Array.isArray(vals) && vals.some(v => v >= rmin && v <= rmax);
+      });
+    
+      const edgeMetric = d3.select('#edgeMetric').property('value');
+      let eMin = +d3.select('#eRangeMin').property('value');
+      let eMax = +d3.select('#eRangeMax').property('value');
+      if (Number.isFinite(eMin) && Number.isFinite(eMax) && eMin > eMax) [eMin, eMax] = [eMax, eMin];
+    
+      const toNum = v => {
+        if (Array.isArray(v)) v = v[0];
+        const n = +v;
+        return Number.isFinite(n) ? n : NaN;
       };
-    }).filter(r => Array.isArray(r.vals));
-
-    const g = d3.select(this);
-	const currentTransform = g.attr('transform');
-    g.selectAll('*').remove();
-
-    rings.forEach(ring => {
-      const isSelectedOmics = ring.type === omicsTypeSelected;
-      const isStage = ring.type === 'stage';
-
-      const slices = ring.vals.map((v, i) => ({
-        start: i * angleStep,
-        end:   (i + 1) * angleStep,
-        value: v
-      }));
-
-      g.selectAll(`path.r${ring.inner}`)
-        .data(slices).enter().append('path')
-        .attr('d', s => d3.arc()({
-          innerRadius: ring.inner,
-          outerRadius: ring.inner + barW,
-          startAngle: s.start,
-          endAngle:   s.end
-        }))
-        .attr('fill', s => {
-          if (s.value == null || isNaN(s.value)) return 'transparent';
-          if (!isStage && isSelectedOmics && (s.value < rmin || s.value > rmax)) {
-            return '#CCCCCC';
-          }
-          return isStage ? getStageColorByIndex(s.value) : ring.scale(s.value);
-        })
-        .attr('fill-opacity', s => {
-          if (isStage) return (s.value == null || isNaN(s.value)) ? 0 : 1;
-          if (!isSelectedOmics) return 1;
-          return (s.value >= rmin && s.value <= rmax) ? 1 : 0.2;
-        })
-        .attr('stroke-width', isStage ? 0 : (isSelectedOmics ? 0.5 : 0))
-        .attr('stroke', s => {
-          if (isStage) return 'none';
-          if (!isSelectedOmics) return 'none';
-          return (s.value >= rmin && s.value <= rmax)
-            ? ring.scale(s.value)
-            : '#CCCCCC';
+    
+      const C_NEG  = d3.select('#edgeNeg').property('value')  || '#0000FF';
+      const C_ZERO = d3.select('#edgeZero').property('value') || '#FFFFFF';
+      const C_POS  = d3.select('#edgePos').property('value')  || '#FF0000';
+    
+      const negScale = d3.scaleLinear().domain([eMin, 0]).range([C_NEG,  C_ZERO]).clamp(true);
+      const posScale = d3.scaleLinear().domain([0,    eMax]).range([C_ZERO, C_POS]).clamp(true);
+    
+      const allEdges = [...(edgeSelStraight?.data() || []), ...(edgeSelCurved?.data() || [])];
+      allEdges.forEach(e => {
+        const metW = toNum(e?.[edgeMetric]);
+        const rawW = toNum(e?.weight);
+        const safeW = Number.isFinite(metW) ? metW : (Number.isFinite(rawW) ? rawW : 0);
+        e._w = safeW;
+        e._inRange = (safeW >= eMin && safeW <= eMax);
+      });
+    
+      const visibleEdges = allEdges.filter(e => e._inRange);
+    
+      // interact 模式
+      let interactColorById = null;
+      let interactOpacityScale = null;
+      if (useInteractMode) {
+        const filteredEdgesWithId = visibleEdges.filter(e =>
+          e.interact_id !== undefined &&
+          e.interact_id !== null &&
+          e.interact_id !== ''
+        );
+    
+        const ids = Array.from(new Set(filteredEdgesWithId.map(e => e.interact_id)));
+        const colorScale = d3.scaleSequential()
+          .domain([0, ids.length - 1])
+          .interpolator(d3.interpolateRainbow);
+    
+        interactColorById = new Map();
+        ids.forEach((id, i) => {
+          interactColorById.set(id, colorScale(i));
         });
-    });
-
-    g.append('text')
-      .text(nodeDatum.id)
-      .attr('y', -((4 + 2) * rings.length) - 4)
-      .attr('text-anchor', 'middle')
-      .style('font-size', '10px')
-      .style('pointer-events', 'none');
-  });
-}
-
-
-
-
-
-
-
-  
- 
-d3.select('#filterBtn').on('click', () => {
-      updateStyles();
-});  
-
-// Compute bounding box of container <g> and add padding
-// 计算「整张图」的包围盒，而不是当前视窗
-function getContentBBox(padding = 20) {
-  const svgNode   = document.getElementById('networkViz');
-  if (!svgNode) return null;
-
-  const container = svgNode.querySelector('g');   // 画网络的那个 <g>
-  if (!container) return null;
-
-  // 1）先把当前 transform 记下来
-  const oldTransform = container.getAttribute('transform');
-
-  // 2）临时去掉 transform，这样 getBBox 拿到的是完整布局的范围
-  if (oldTransform) {
-    container.removeAttribute('transform');
-  }
-
-  // 3）计算未变换状态下的 bbox
-  const b = container.getBBox();
-
-  // 4）算完之后马上把 transform 还回去，不影响页面显示
-  if (oldTransform) {
-    container.setAttribute('transform', oldTransform);
-  }
-
-  return {
-    x:      b.x - padding,
-    y:      b.y - padding,
-    width:  b.width  + 2 * padding,
-    height: b.height + 2 * padding,
-    svg: svgNode,
-    container
-  };
-}
-
-
-// One-click fit: bring all nodes into view (auto-scale to current viewport)
-function fitToView() {
-  const info = getContentBBox(40);
-  if (!info) return;
-  const svg = d3.select(info.svg);
-  const width  = +svg.attr('width')  || 1000;
-  const height = +svg.attr('height') || 700;
-
-  const scale = Math.min(width / info.width, height / info.height) * 0.95;
-  const tx = width  / 2 - scale * (info.x + info.width  / 2);
-  const ty = height / 2 - scale * (info.y + info.height / 2);
-
- // const zoom = d3.zoom().on('zoom', e => {
-   // d3.select(info.container).attr('transform', e.transform);
- // });
- // svg.call(zoom);
- // svg.transition().duration(300)
-  //   .call(zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
- const t = d3.zoomIdentity.translate(tx, ty).scale(scale);
-
-if (window.zoomBehavior) {
-  svg.transition().duration(300)
-     .call(window.zoomBehavior.transform, t)
-     .selection()
-     .on('wheel.zoom', null)
-     .on('dblclick.zoom', null)
-     //.on('mousedown.zoom', null)
-     //.on('touchstart.zoom', null);
-} else {
-  d3.select(info.container)
-    .attr('transform', `translate(${tx},${ty}) scale(${scale})`);
-}
-
-}
-
-
-function snapshotSVG() {
-  const svgOriginal = document.getElementById('networkViz');
-  if (!svgOriginal) return null;
-
-  // 用之前的函数拿内容的包围盒（不受滚动和 zoom 影响）
-  const info = getContentBBox(40);   // padding 40，可按需要调小/调大
-
-  // 克隆当前 SVG（只用于导出，怎么改都不会影响页面）
-  const svgNode = svgOriginal.cloneNode(true);
-  svgNode.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-  svgNode.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
-  svgNode.removeAttribute('style');  // 去掉 width:700% 之类的内联样式
-
-  // 去掉克隆里 <g> 的 zoom/pan 变换，使用原始布局坐标
-  const gClone = svgNode.querySelector('g');
-  if (gClone) {
-    gClone.removeAttribute('transform');
-  }
-
-  let w, h, vx, vy;
-  if (info) {
-    w  = info.width;
-    h  = info.height;
-    vx = info.x;
-    vy = info.y;
-  } else {
-    // 兜底：没有 info 就退回原来的逻辑
-    if (svgOriginal.viewBox && svgOriginal.viewBox.baseVal && svgOriginal.viewBox.baseVal.width) {
-      w = svgOriginal.viewBox.baseVal.width;
-      h = svgOriginal.viewBox.baseVal.height;
-    } else {
-      w = svgOriginal.width.baseVal.value || 1000;
-      h = svgOriginal.height.baseVal.value || 700;
+    
+        const absVals = filteredEdgesWithId.map(e => Math.abs(e._w)).filter(Number.isFinite);
+        if (absVals.length) {
+          const wMin = d3.min(absVals);
+          const wMax = d3.max(absVals);
+          interactOpacityScale = d3.scaleLinear()
+            .domain([wMin, wMax])
+            .range([0.3, 1.0])
+            .clamp(true);
+        }
+      }
+    
+    const GREY_OUT = '#DDDDDD';
+    
+    // 基于边的权重决定颜色：负 -> negColor, 0 -> zeroColor, 正 -> posColor
+    function baseWeightColor(d) {
+      const v = d._w;
+      if (!Number.isFinite(v)) return '#CCCCCC';
+      if (v === 0) return C_ZERO;
+      return v < 0 ? negScale(v) : posScale(v);
     }
-    vx = 0;
-    vy = 0;
-  }
-
-  // 让 viewBox 覆盖整个内容区域
-  svgNode.setAttribute('viewBox', `${vx} ${vy} ${w} ${h}`);
-  svgNode.setAttribute('width',  w);
-  svgNode.setAttribute('height', h);
-
-  // 注意：这里不再修改 marker#arrow，保持和页面一致
-  return svgNode;
-}
-
-
-
-// download SVG
-function saveSVG() {
-  const svgNode = snapshotSVG();
-  if (!svgNode) return;
-  const ser = new XMLSerializer();
-  const svgStr = ser.serializeToString(svgNode);
-  const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const id = d3.select('#commSelect').property('value') || 'community';
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${id}.svg`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
-
- /*async function savePDF() {
-  const svgNode = snapshotSVG();
-  if (!svgNode) return;
-
-  // —— 这里单独修正 PDF 用的箭头样式 —— //
-  const arrowPath = svgNode.querySelector('marker#arrow path');
-  if (arrowPath) {
-    // 去掉 context-stroke 的 fill 效果，避免变成黑色实心三角
-    arrowPath.removeAttribute('fill');
-    arrowPath.setAttribute('fill', 'none');      // 不填充
-    arrowPath.setAttribute('stroke', '#666666'); // 用灰色描边
-    arrowPath.setAttribute('stroke-width', '1');
-    arrowPath.setAttribute('stroke-linejoin', 'round');
-  }
-  // —— 到这里为止，只影响 PDF 用的克隆，不影响页面、不影响 SVG 下载 —— //
-
-  const w = svgNode.viewBox?.baseVal?.width  || svgNode.width.baseVal.value;
-  const h = svgNode.viewBox?.baseVal?.height || svgNode.height.baseVal.value;
-
-  const PDFCtor = (window.jsPDF || (window.jspdf && window.jspdf.jsPDF));
-  if (!PDFCtor) { alert('jsPDF is nor be loaded'); return; }
-
-  const pdf = new PDFCtor({ orientation: w > h ? 'l' : 'p', unit: 'pt', format: [w, h] });
-
-  if (typeof pdf.svg === 'function') {
-    await pdf.svg(svgNode, { x:0, y:0, width:w, height:h, useCSS:true, preserveAspectRatio:'xMidYMid meet' });
-  } else if (typeof window.svg2pdf === 'function') {
-    window.svg2pdf(svgNode, pdf, { xOffset:0, yOffset:0, scale:1, useCSS:true });
-  } else {
-    const CanvgCtor = (window.canvg && (window.canvg.Canvg || window.canvg.default)) || window.Canvg || window.canvg;
-    if (!CanvgCtor) { alert('svg2pdf/canvg are not ready'); return; }
-
-    const SCALE = 3;
-    const canvas = document.createElement('canvas');
-    canvas.width  = Math.round(w * SCALE);
-    canvas.height = Math.round(h * SCALE);
-    const ctx = canvas.getContext('2d'); ctx.scale(SCALE, SCALE);
-
-    const svgString = new XMLSerializer().serializeToString(svgNode);
-    const v = (typeof CanvgCtor.from === 'function')
-      ? await CanvgCtor.from(ctx, svgString, { ignoreMouse:true, ignoreAnimation:true, enableRedraw:false })
-      : await CanvgCtor.fromString(ctx, svgString, { ignoreMouse:true, ignoreAnimation:true, enableRedraw:false });
-    await v.render();
-
-    const img = canvas.toDataURL('image/png');
-    pdf.addImage(img, 'PNG', 0, 0, w, h);
-  }
-
-  const id = d3.select('#commSelect').property('value') || 'community';
-  pdf.save(`${id}.pdf`);
-}*/
-
-async function savePDF() {
-  const svgNode = snapshotSVG();
-  if (!svgNode) return;
-
-  //（可选）只在导出 PDF 时微调箭头样式，避免黑实心
-  /*const arrowPath = svgNode.querySelector('marker#arrow path');
-  if (arrowPath) {
-    arrowPath.removeAttribute('fill');
-    arrowPath.setAttribute('fill', 'none');
-    arrowPath.setAttribute('stroke', '#666666');
-    arrowPath.setAttribute('stroke-width', '1');
-    arrowPath.setAttribute('stroke-linejoin', 'round');
-  }*/
-
-  const w = svgNode.viewBox?.baseVal?.width  || svgNode.width.baseVal.value;
-  const h = svgNode.viewBox?.baseVal?.height || svgNode.height.baseVal.value;
-
-  const PDFCtor = (window.jsPDF || (window.jspdf && window.jspdf.jsPDF));
-  if (!PDFCtor) {
-    alert('jsPDF 没有正确加载');
-    return;
-  }
-
-  // 兼容不同导出方式，优先使用我们在 head 里挂好的 svg2pdfFn
-  const svg2pdfFn =
-    (typeof window.svg2pdfFn === 'function') ? window.svg2pdfFn :
-    (typeof window.svg2pdf    === 'function') ? window.svg2pdf    :
-    null;
-
-  if (!svg2pdfFn) {
-    alert('svg2pdf.js 没有正确加载');
-    return;
-  }
-
-  const pdf = new PDFCtor({
-    orientation: w > h ? 'l' : 'p',
-    unit: 'pt',
-    format: [w, h]
-  });
-
-  // 只用 svg2pdf，生成矢量 PDF
-  await svg2pdfFn(svgNode, pdf, {
-    xOffset: 0,
-    yOffset: 0,
-    scale:   1,
-    useCSS:  true
-  });
-
-  const id = d3.select('#commSelect').property('value') || 'community';
-  pdf.save(`${id}.pdf`);
-}
-
-
-
-const zoomStep = 1.2;  // 每次点击放大/缩小的倍数
-
-const btnIn  = document.getElementById('zoomIn');
-const btnOut = document.getElementById('zoomOut');
-
-if (btnIn) {
-  btnIn.addEventListener('click', () => {
-    if (!window.zoomBehavior) return;
-    svg.transition().duration(250)
-       .call(window.zoomBehavior.scaleBy, zoomStep);
-  });
-}
-
-if (btnOut) {
-  btnOut.addEventListener('click', () => {
-    if (!window.zoomBehavior) return;
-    svg.transition().duration(250)
-       .call(window.zoomBehavior.scaleBy, 1 / zoomStep);
-  });
-}
-
-
-//build session
-function buildSessionJSON() {
-  const sid = new URLSearchParams(location.search).get('sid') || '';
-
-  const state = {
-    sid,
-    community: d3.select('#commSelect').property('value'),
-    degreeRange: {
-      min: +d3.select('#degMin').property('value'),
-      max: +d3.select('#degMax').property('value')
-    },
-    dataFilter: {
-      dataType:  d3.select('#dataType').property('value'),
-      omicsType: d3.select('#omicsType').property('value'),
-      valueRange: {
-        min: +d3.select('#rangeMin').property('value'),
-        max: +d3.select('#rangeMax').property('value')
+    
+    // 边的颜色：先看是否在 range 内，再看是否是 interact 模式
+    function edgeStroke(d) {
+      // 不在数值范围内直接灰掉
+      if (!d._inRange) return GREY_OUT;
+    
+      // interact 模式：用 interact_id 的颜色（如果没有 id，就回退到权重颜色）
+      if (useInteractMode) {
+        const c = interactColorById?.get(d.interact_id);
+        return c || baseWeightColor(d);
       }
-    },
-    edgeFilter: {
-      metric: d3.select('#edgeMetric').property('value'),
-      range: {
-        min: +d3.select('#eRangeMin').property('value'),
-        max: +d3.select('#eRangeMax').property('value')
+    
+      // 默认模式：完全按权重上色
+      return baseWeightColor(d);
+    }
+    
+    // 边透明度：range 外很淡；interact 模式按权重调透明度；默认给一个较稳定的值
+    function edgeOpacity(d) {
+      if (!d._inRange) return 0.12;
+    
+      if (useInteractMode && interactOpacityScale && interactColorById?.has(d.interact_id)) {
+        const v = Math.abs(d._w);
+        return interactOpacityScale(v);
       }
-    },
-    colors: {
-      exp: { neg: d3.select('#expNeg').property('value'), zero: d3.select('#expZero').property('value'), pos: d3.select('#expPos').property('value') },
-      mty: { neg: d3.select('#mtyNeg').property('value'), zero: d3.select('#mtyZero').property('value'), pos: d3.select('#mtyPos').property('value') },
-      snv: { neg: d3.select('#snvNeg').property('value'), zero: d3.select('#snvZero').property('value'),pos: d3.select('#snvPos').property('value')},
-      cnv: { neg: d3.select('#cnvNeg').property('value'), zero: d3.select('#cnvZero').property('value'), pos: d3.select('#cnvPos').property('value') },
-      edge:{ neg: d3.select('#edgeNeg').property('value'), zero: d3.select('#edgeZero').property('value'), pos: d3.select('#edgePos').property('value') }
-    },
-    // display the subset of data
-    data: (typeof currentData !== 'undefined' && currentData) ? {
-      nodes: currentData.nodes,
-      edges: currentData.edges
-    } : null,
+    
+      // 默认模式：给一个中等偏高的透明度
+      return 0.7;
+    }
+    
+    
+      const maxAbsW = d3.max(visibleEdges, e => Math.abs(e._w)) || 1;
+      const sw = v => Math.max(0.5, 1.5 * Math.sqrt(Math.abs(v || 0)));
+      const CONST_SW = Math.max(2.5, sw(maxAbsW))*0.75;
+    
+      if (edgeSelStraight) {
+        edgeSelStraight
+          .attr('stroke-width', CONST_SW)
+          .attr('stroke', d => edgeStroke(d))
+          .attr('opacity', d => edgeOpacity(d));
+      }
+      if (edgeSelCurved) {
+        edgeSelCurved
+          .attr('stroke-width', CONST_SW)
+          .attr('stroke', d => edgeStroke(d))
+          .attr('opacity', d => edgeOpacity(d));
+      }
+    
+      // 环 + label 的颜色（和原来 drawNetwork 中的一样）
+      nodeSel.each(function(nodeDatum) {
+        const omicsTypeSelected = d3.select('#omicsType').property('value');
+        const rmin = +d3.select('#rangeMin').property('value');
+        const rmax = +d3.select('#rangeMax').property('value');
+    
+        const barW = 4, gap = 2;
+        const sampleCount = nodeDatum.exp_vals.length;
+        const angleStep   = 2 * Math.PI / sampleCount;
+    
+        const ringDefs = [
+          { type: 'snv',  inner: barW + gap },
+          { type: 'cnv',  inner: 2 * (barW + gap) },
+          { type: 'mty',  inner: 3 * (barW + gap) },
+          { type: 'exp',  inner: 4 * (barW + gap) },
+          { type: 'stage',inner: 5 * (barW + gap) }
+        ];
+    
+        const rings = ringDefs.map(r => {
+          if (r.type === 'stage') {
+            return { ...r, vals: nodeDatum.stage_idx, scale: null };
+          }
+          const metric = omicsMetric[r.type] || 'raw';
+          const suffix = metric === 'zscore' ? '_z'
+                        : metric === 'norm'  ? '_norm'
+                        : '_vals';
+          return {
+            ...r,
+            metric,
+            vals: nodeDatum[r.type + suffix],
+            scale: colorConfig[r.type]
+          };
+        }).filter(r => Array.isArray(r.vals));
+    
+        const g = d3.select(this);
+    	const currentTransform = g.attr('transform');
+        g.selectAll('*').remove();
+    
+        rings.forEach(ring => {
+          const isSelectedOmics = ring.type === omicsTypeSelected;
+          const isStage = ring.type === 'stage';
+    
+          const slices = ring.vals.map((v, i) => ({
+            start: i * angleStep,
+            end:   (i + 1) * angleStep,
+            value: v
+          }));
+    
+          g.selectAll(`path.r${ring.inner}`)
+            .data(slices).enter().append('path')
+            .attr('d', s => d3.arc()({
+              innerRadius: ring.inner,
+              outerRadius: ring.inner + barW,
+              startAngle: s.start,
+              endAngle:   s.end
+            }))
+            .attr('fill', s => {
+              if (s.value == null || isNaN(s.value)) return 'transparent';
+              if (!isStage && isSelectedOmics && (s.value < rmin || s.value > rmax)) {
+                return '#CCCCCC';
+              }
+              return isStage ? getStageColorByIndex(s.value) : ring.scale(s.value);
+            })
+            .attr('fill-opacity', s => {
+              if (isStage) return (s.value == null || isNaN(s.value)) ? 0 : 1;
+              if (!isSelectedOmics) return 1;
+              return (s.value >= rmin && s.value <= rmax) ? 1 : 0.2;
+            })
+            .attr('stroke-width', isStage ? 0 : (isSelectedOmics ? 0.5 : 0))
+            .attr('stroke', s => {
+              if (isStage) return 'none';
+              if (!isSelectedOmics) return 'none';
+              return (s.value >= rmin && s.value <= rmax)
+                ? ring.scale(s.value)
+                : '#CCCCCC';
+            });
+        });
+    
+        g.append('text')
+          .text(nodeDatum.id)
+          .attr('y', -((4 + 2) * rings.length) - 4)
+          .attr('text-anchor', 'middle')
+          .style('font-size', '10px')
+          .style('pointer-events', 'none');
+      });
+    }
+    
+    
+    
+    
+    
+    
+    
+      
+     
+    d3.select('#filterBtn').on('click', () => {
+          updateStyles();
+    });  
 
-    //the latest point coordinate from last time
-    layout: lastLayout,
+    // Compute bounding box of container <g> and add padding
 
-    // json path with ssession id
-    source: sid ? `uploads/${sid}/community_map_top100.json` : 'uploads/community_map_top100.json',
+    function getContentBBox(padding = 20) {
+      const svgNode   = document.getElementById('networkViz');
+      if (!svgNode) return null;
+    
+      const container = svgNode.querySelector('g');   // the <g> element that renders the network
+      if (!container) return null;
+    
+      // 1) Save the current transform
+      const oldTransform = container.getAttribute('transform');
+    
+      // 2) Temporarily remove the transform so getBBox() returns the full layout extent
+      if (oldTransform) {
+        container.removeAttribute('transform');
+      }
+    
+      // 3) Compute the bounding box in the untransformed coordinate space
+      const b = container.getBBox();
+    
+      // 4) Restore the original transform immediately to avoid affecting the visual state
+      if (oldTransform) {
+        container.setAttribute('transform', oldTransform);
+      }
+    
+      return {
+        x:      b.x - padding,
+        y:      b.y - padding,
+        width:  b.width  + 2 * padding,
+        height: b.height + 2 * padding,
+        svg: svgNode,
+        container
+      };
+    }
 
-    savedAt: new Date().toISOString()
-  };
-  return state;
-}
 
-/* trigger the downloading*/
-function saveJSON() {
-  const state = buildSessionJSON();
-  const text  = JSON.stringify(state, null, 2);
-  const blob  = new Blob([text], { type: 'application/json;charset=utf-8' });
-  const url   = URL.createObjectURL(blob);
+    // One-click fit: bring all nodes into view (auto-scale to current viewport)
+    function fitToView() {
+      const info = getContentBBox(40);
+      if (!info) return;
+      const svg = d3.select(info.svg);
+      const width  = +svg.attr('width')  || 1000;
+      const height = +svg.attr('height') || 700;
+    
+      const scale = Math.min(width / info.width, height / info.height) * 0.95;
+      const tx = width  / 2 - scale * (info.x + info.width  / 2);
+      const ty = height / 2 - scale * (info.y + info.height / 2);
+      const t = d3.zoomIdentity.translate(tx, ty).scale(scale);
+    
+      if (window.zoomBehavior) {
+        svg.transition().duration(300)
+           .call(window.zoomBehavior.transform, t)
+           .selection()
+           .on('wheel.zoom', null)
+           .on('dblclick.zoom', null)
+           //.on('mousedown.zoom', null)
+           //.on('touchstart.zoom', null);
+      } else {
+        d3.select(info.container)
+          .attr('transform', `translate(${tx},${ty}) scale(${scale})`);
+      }
+    
+    }
+    
 
-  const sid  = state.sid || 'nosid';
-  const comm = state.community || 'community';
+    function snapshotSVG() {
+      const svgOriginal = document.getElementById('networkViz');
+      if (!svgOriginal) return null;
+    
+      // Use the previously defined function to get the content bounding box
+      // (independent of scrolling and zoom transformations)
+      const info = getContentBBox(40);   // Apply a padding of 40 (adjustable as needed)
+    
+      // Clone the current SVG (used for export only; modifications will not affect the live view)
+      const svgNode = svgOriginal.cloneNode(true);
+      svgNode.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+      svgNode.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+      svgNode.removeAttribute('style');  
+    
+      // Remove zoom/pan transforms from the <g> elements in the cloned SVG
+      // so the original layout coordinates are used
+      const gClone = svgNode.querySelector('g');
+      if (gClone) {
+        gClone.removeAttribute('transform');
+      }
+    
+      let w, h, vx, vy;
+      if (info) {
+        w  = info.width;
+        h  = info.height;
+        vx = info.x;
+        vy = info.y;
+      } else {
+        // Fallback: if no bounding box info is available, revert to the original logic
+        if (svgOriginal.viewBox && svgOriginal.viewBox.baseVal && svgOriginal.viewBox.baseVal.width) {
+          w = svgOriginal.viewBox.baseVal.width;
+          h = svgOriginal.viewBox.baseVal.height;
+        } else {
+          w = svgOriginal.width.baseVal.value || 1000;
+          h = svgOriginal.height.baseVal.value || 700;
+        }
+        vx = 0;
+        vy = 0;
+      }
+    
+      // Set the viewBox to fully cover the content area
+      svgNode.setAttribute('viewBox', `${vx} ${vy} ${w} ${h}`);
+      svgNode.setAttribute('width',  w);
+      svgNode.setAttribute('height', h);
+    
+      // Note: do not modify marker#arrow here; keep it consistent with the on-screen rendering
+      return svgNode;
+    }
 
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `session_${sid}_${comm}.json`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
+
+
+    // download SVG
+    function saveSVG() {
+      const svgNode = snapshotSVG();
+      if (!svgNode) return;
+      const ser = new XMLSerializer();
+      const svgStr = ser.serializeToString(svgNode);
+      const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const id = d3.select('#commSelect').property('value') || 'community';
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${id}.svg`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+ 
+    async function savePDF() {
+      const svgNode = snapshotSVG();
+      if (!svgNode) return;
+    
+      const w = svgNode.viewBox?.baseVal?.width  || svgNode.width.baseVal.value;
+      const h = svgNode.viewBox?.baseVal?.height || svgNode.height.baseVal.value;
+    
+      const PDFCtor = (window.jsPDF || (window.jspdf && window.jspdf.jsPDF));
+      if (!PDFCtor) {
+        alert('jsPDF 没有正确加载');
+        return;
+      }
+    
+      // Support multiple export paths; prefer svg2pdfFn registered in <head>
+      const svg2pdfFn =
+        (typeof window.svg2pdfFn === 'function') ? window.svg2pdfFn :
+        (typeof window.svg2pdf    === 'function') ? window.svg2pdf    :
+        null;
+    
+      if (!svg2pdfFn) {
+        alert('svg2pdf.js 没有正确加载');
+        return;
+      }
+    
+      const pdf = new PDFCtor({
+        orientation: w > h ? 'l' : 'p',
+        unit: 'pt',
+        format: [w, h]
+      });
+    
+      // use  svg2pdf to create vector-based PDF
+      await svg2pdfFn(svgNode, pdf, {
+        xOffset: 0,
+        yOffset: 0,
+        scale:   1,
+        useCSS:  true
+      });
+    
+      const id = d3.select('#commSelect').property('value') || 'community';
+      pdf.save(`${id}.pdf`);
+    }
+
+
+
+    const zoomStep = 1.2; 
+    
+    const btnIn  = document.getElementById('zoomIn');
+    const btnOut = document.getElementById('zoomOut');
+    
+    if (btnIn) {
+      btnIn.addEventListener('click', () => {
+        if (!window.zoomBehavior) return;
+        svg.transition().duration(250)
+           .call(window.zoomBehavior.scaleBy, zoomStep);
+      });
+    }
+    
+    if (btnOut) {
+      btnOut.addEventListener('click', () => {
+        if (!window.zoomBehavior) return;
+        svg.transition().duration(250)
+           .call(window.zoomBehavior.scaleBy, 1 / zoomStep);
+      });
+    }
+
+
+    //build session
+    function buildSessionJSON() {
+      const sid = new URLSearchParams(location.search).get('sid') || '';
+    
+      const state = {
+        sid,
+        community: d3.select('#commSelect').property('value'),
+        degreeRange: {
+          min: +d3.select('#degMin').property('value'),
+          max: +d3.select('#degMax').property('value')
+        },
+        dataFilter: {
+          dataType:  d3.select('#dataType').property('value'),
+          omicsType: d3.select('#omicsType').property('value'),
+          valueRange: {
+            min: +d3.select('#rangeMin').property('value'),
+            max: +d3.select('#rangeMax').property('value')
+          }
+        },
+        edgeFilter: {
+          metric: d3.select('#edgeMetric').property('value'),
+          range: {
+            min: +d3.select('#eRangeMin').property('value'),
+            max: +d3.select('#eRangeMax').property('value')
+          }
+        },
+        colors: {
+          exp: { neg: d3.select('#expNeg').property('value'), zero: d3.select('#expZero').property('value'), pos: d3.select('#expPos').property('value') },
+          mty: { neg: d3.select('#mtyNeg').property('value'), zero: d3.select('#mtyZero').property('value'), pos: d3.select('#mtyPos').property('value') },
+          snv: { neg: d3.select('#snvNeg').property('value'), zero: d3.select('#snvZero').property('value'),pos: d3.select('#snvPos').property('value')},
+          cnv: { neg: d3.select('#cnvNeg').property('value'), zero: d3.select('#cnvZero').property('value'), pos: d3.select('#cnvPos').property('value') },
+          edge:{ neg: d3.select('#edgeNeg').property('value'), zero: d3.select('#edgeZero').property('value'), pos: d3.select('#edgePos').property('value') }
+        },
+        // display the subset of data
+        data: (typeof currentData !== 'undefined' && currentData) ? {
+          nodes: currentData.nodes,
+          edges: currentData.edges
+        } : null,
+    
+        //the latest point coordinate from last time
+        layout: lastLayout,
+    
+        // json path with ssession id
+        source: sid ? `uploads/${sid}/community_map_top100.json` : 'uploads/community_map_top100.json',
+    
+        savedAt: new Date().toISOString()
+      };
+      return state;
+    }
+    
+    /* trigger the downloading*/
+    function saveJSON() {
+      const state = buildSessionJSON();
+      const text  = JSON.stringify(state, null, 2);
+      const blob  = new Blob([text], { type: 'application/json;charset=utf-8' });
+      const url   = URL.createObjectURL(blob);
+    
+      const sid  = state.sid || 'nosid';
+      const comm = state.community || 'community';
+    
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `session_${sid}_${comm}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
 
 /* =====bind the button ===== */
-const saveJSONBtn = document.getElementById('saveJSONBtn');
-if (saveJSONBtn) saveJSONBtn.onclick = () => saveJSON();
-	    
-
-
- })();
+   const saveJSONBtn = document.getElementById('saveJSONBtn');
+   if (saveJSONBtn) saveJSONBtn.onclick = () => saveJSON();
+   	    
+   
+   
+    })();
   </script>
 </body>
 </html>
