@@ -1016,7 +1016,8 @@
     
     const GREY_OUT = '#DDDDDD';
     
-    // 基于边的权重决定颜色：负 -> negColor, 0 -> zeroColor, 正 -> posColor
+    // Determine edge color based on edge weight:
+    //   negative → negColor, zero → zeroColor, positive → posColor
     function baseWeightColor(d) {
       const v = d._w;
       if (!Number.isFinite(v)) return '#CCCCCC';
@@ -1024,22 +1025,25 @@
       return v < 0 ? negScale(v) : posScale(v);
     }
     
-    // 边的颜色：先看是否在 range 内，再看是否是 interact 模式
+    // Edge color logic:
+    //   first check whether the edge is within the value range,
+    //   then check whether interact mode is enabled.
     function edgeStroke(d) {
-      // 不在数值范围内直接灰掉
+     // Edges outside the value range are grayed out.
       if (!d._inRange) return GREY_OUT;
     
-      // interact 模式：用 interact_id 的颜色（如果没有 id，就回退到权重颜色）
+     // Interact mode: color by interact_id
+    // (fallback to weight-based color if interact_id is missing)
       if (useInteractMode) {
         const c = interactColorById?.get(d.interact_id);
         return c || baseWeightColor(d);
       }
     
-      // 默认模式：完全按权重上色
+      // Default mode: color purely based on weight.
       return baseWeightColor(d);
     }
     
-    // 边透明度：range 外很淡；interact 模式按权重调透明度；默认给一个较稳定的值
+    // Edge opacity is low outside the range, weight-scaled in interact mode,
     function edgeOpacity(d) {
       if (!d._inRange) return 0.12;
     
@@ -1048,7 +1052,7 @@
         return interactOpacityScale(v);
       }
     
-      // 默认模式：给一个中等偏高的透明度
+     // and fixed to a stable value in default mode.
       return 0.7;
     }
     
@@ -1070,7 +1074,7 @@
           .attr('opacity', d => edgeOpacity(d));
       }
     
-      // 环 + label 的颜色（和原来 drawNetwork 中的一样）
+      // Ring and label colors (same as in the original drawNetwork).
       nodeSel.each(function(nodeDatum) {
         const omicsTypeSelected = d3.select('#omicsType').property('value');
         const rmin = +d3.select('#rangeMin').property('value');
