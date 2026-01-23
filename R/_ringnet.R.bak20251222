@@ -1,0 +1,434 @@
+#' RingNet: community map builder for multi-omics network
+#'
+#' Build per-community node/edge maps from an interaction network and multi-omics
+#' matrices, then export JSON.
+#'
+#' Required inputs: edges, nodes, meglist, out_json.
+#' At least one of expression/methylation/snv/cnv must be provided.
+#' stage is optional.
+#'
+#' @param edges Path to edges CSV (required). Must contain columns from/to or source/target.
+#' @param nodes Path to nodes CSV (required). Must contain column cellgroup or name.
+#' @param meglist Path to community membership CSV (required). Must contain community and one of cellgroup/name/gene.
+#' @param expression Path to expression CSV (optional). Row names are samples, columns are genes.
+#' @param methylation Path to methylation CSV (optional). Row names are samples, columns are genes.
+#' @param snv Path to SNV CSV (optional). Row names are samples, columns are genes.
+#' @param cnv Path to CNV CSV (optional). Row names are samples, columns are genes.
+#' @param stage Path to stage CSV (optional). Two columns: sample + stage/index/group.
+#' @param out_json Output JSON path (required).
+#' @param TOP_N Top N nodes per community by mean expression.
+#' @param KEEP_DIRECTED Whether to keep the graph directed.
+#' @param n_cores Number of cores for parallel computation.
+#'
+#' @return (invisible) A list of per-community maps; JSON is written to out_json.
+#' @export
+#'
+#' @importFrom jsonlite write_json
+#' @importFrom igraph graph_from_data_frame induced_subgraph degree vcount V E
+#' @importFrom graphlayouts layout_with_stress
+#' @importFrom parallel detectCores makeCluster stopCluster parLapply clusterExport clusterEvalQ
+#' @importFrom dplyr rename select
+ringnet <- function(graph_edges,
+                    graph_nodes,
+                    node_group = NULL,
+                    Data1   = NULL,
+                    Data2    = NULL,
+                    Data3            = NULL,
+                    Data4          = NULL,
+                    sample_group        = NULL,
+                    out_json,
+                    TOP_N        = 100,
+                    KEEP_DIRECTED = TRUE,
+                    n_cores      = max(1L, parallel::detectCores() - 1L)) {
+  
+  
+    
+
+  edges   <- graph_edges
+  nodes   <- graph_nodes
+  meglist <- node_group
+  
+  expression  <- Data1
+  methylation <- Data2
+  snv         <- Data3
+  cnv         <- Data4
+  stage       <- sample_group
+  
+  
+  
+  ## --------- internal helpers ---------
+  .stop_if_missing <- function(path, nm) {
+    if (is.null(path) || path %in% c("", "NA", "NULL", "null", "-") || !file.exists(path)) {
+      stop(sprintf("Missing required file: %s", nm), call. = FALSE)
+    }
+  }
+  
+  .read_or_empty <- function(path) {
+    if (is.null(path) || path %in% c("", "NA", "NULL", "null", "-") || !file.exists(path)) {
+      data.frame()
+    } else {
+      utils::read.csv(path, row.names = 1, check.names = FALSE)
+    }
+  }
+  
+  .read_stage_vector <- function(path) {
+    if (is.null(path) || path %in% c("", "NA", "NULL", "null", "-") || !file.exists(path)) {
+      return(NULL)
+    }
+    df <- tryCatch(utils::read.csv(path, check.names = FALSE), error = function(e) NULL)
+    if (is.null(df) || ncol(df) < 2) return(NULL)
+    
+    sample_col <- which(grepl("sample|id|name", tolower(names(df))))[1]
+    index_col  <- which(grepl("index|stage|class|group", tolower(names(df))))[1]
+    if (is.na(sample_col) || is.na(index_col)) { sample_col <- 1; index_col <- 2 }
+    
+    s   <- as.character(df[[sample_col]])
+    idx <- suppressWarnings(as.integer(df[[index_col]]))
+    names(idx) <- s
+    idx
+  }
+  
+  ## --------- validate required inputs ---------
+  .stop_if_missing(edges, "edges")
+  .stop_if_missing(nodes, "nodes")
+  #.stop_if_missing(meglist, "meglist")
+  if (missing(out_json) || is.null(out_json) || out_json == "") {
+    stop("out_json must be provided.", call. = FALSE)
+  }
+  ## --------- validate TOP_N ---------
+  if (!is.numeric(TOP_N) || length(TOP_N) != 1 || !is.finite(TOP_N) || TOP_N < 1 || TOP_N %% 1 != 0) {
+    stop("TOP_N must be a single positive integer.", call. = FALSE)
+  }
+  TOP_N <- as.integer(TOP_N)
+  ## --------- 1) read graph data ---------
+  edges_df <- utils::read.csv(edges, check.names = FALSE)
+  nodes_df_tmp <- utils::read.csv(nodes, check.names = FALSE)
+  
+  if ("cellgroup" %in% names(nodes_df_tmp)) {
+    nodes_df <- nodes_df_tmp["cellgroup"]
+  } else if ("name" %in% names(nodes_df_tmp)) {
+    nodes_df <- data.frame(name = nodes_df_tmp$name, stringsAsFactors = FALSE)
+  } else {
+    stop("nodes CSV must contain either 'cellgroup' or 'name' column.", call. = FALSE)
+  }
+  
+  sgcell_id <- FALSE
+  if ("cellgroup" %in% names(nodes_df)) {
+    if (any(!is.na(nodes_df$cellgroup) & nodes_df$cellgroup != "")) {
+      sgcell_id <- TRUE
+      message("'cellgroup' detected in nodes -> sgcell_id = TRUE")
+    }
+  }
+  
+  # Map source/target -> from/to if needed
+  if (!all(c("from","to") %in% names(edges_df))) {
+    if (all(c("source","target") %in% names(edges_df))) {
+      names(edges_df)[match(c("source","target"), names(edges_df))] <- c("from","to")
+    } else {
+      stop("edges CSV must contain from/to (or source/target).", call. = FALSE)
+    }
+  }
+  if (!("weight" %in% names(edges_df))) edges_df$weight <- NA
+  
+  nodes_df <- unique(nodes_df)
+  if ("cellgroup" %in% names(nodes_df)) nodes_df <- dplyr::rename(nodes_df, name = cellgroup)
+  edges_df <- dplyr::select(edges_df, from, to, dplyr::everything())
+  
+  graph_comp <- igraph::graph_from_data_frame(
+    d = edges_df,
+    vertices = nodes_df,
+    directed = KEEP_DIRECTED
+  )
+  if (is.null(igraph::E(graph_comp)$weight)) igraph::E(graph_comp)$weight <- 1
+  
+  if (KEEP_DIRECTED) {
+    igraph::V(graph_comp)$degree_all <- igraph::degree(graph_comp, mode = "all")
+    igraph::V(graph_comp)$degree_in  <- igraph::degree(graph_comp, mode = "in")
+    igraph::V(graph_comp)$degree_out <- igraph::degree(graph_comp, mode = "out")
+  } else {
+    igraph::V(graph_comp)$degree_all <- igraph::degree(graph_comp, mode = "all")
+  }
+  
+  ## --------- 1b) read community membership (meglist) ---------
+  all_node_names <- unique(as.character(nodes_df$name))
+  all_node_names <- all_node_names[!is.na(all_node_names) & all_node_names != ""]
+  
+  a_memb <- data.frame(
+    name = all_node_names,
+    community = rep(1L, length(all_node_names)),
+    stringsAsFactors = FALSE
+  )
+  
+  if (is.null(meglist) || meglist %in% c("", "NA", "NULL", "null", "-") || !file.exists(meglist)) {
+    
+    # meglist 缺失：自动构造单一社区 community=1
+    a_memb <- data.frame(
+      name = all_node_names,
+      community = 1L,
+      stringsAsFactors = FALSE
+    )
+    key_col <- "name"
+    message("meglist is missing -> using graph_nodes$name to build membership with community=1")
+    
+  } else {
+  a_memb <- utils::read.csv(meglist, check.names = FALSE)
+  names(a_memb) <- tolower(trimws(names(a_memb)))
+  
+  if ("cellgroup" %in% names(a_memb)) {
+    a_memb <- a_memb[, c("cellgroup", "community")]
+    key_col <- "cellgroup"
+  } else if ("name" %in% names(a_memb)) {
+    a_memb <- a_memb[, c("name", "community")]
+    key_col <- "name"
+  } else if ("gene" %in% names(a_memb)) {
+    a_memb <- a_memb[, c("gene", "community")]
+    key_col <- "gene"
+  } else {
+    stop("meglist must contain community and one of: cellgroup/name/gene.", call. = FALSE)
+  }
+  
+  a_memb <- a_memb[!duplicated(a_memb[[key_col]]), , drop = FALSE]
+  }
+  mem_vec <- stats::setNames(as.integer(a_memb$community), a_memb[[key_col]])
+  
+  melanet_spg <- structure(list(
+    membership = mem_vec,
+    algorithm  = "csv",
+    modularity = NA_real_,
+    vcount     = igraph::vcount(graph_comp)
+  ), class = "communities")
+  
+  ## --------- 2) read omics matrices ---------
+  e_raw   <- .read_or_empty(expression)
+  if (sgcell_id && nrow(e_raw) > 0) {
+    message("sgcell_id = TRUE -> Transposing expression matrix")
+    e_raw <- as.data.frame(t(e_raw))
+  }
+  m_raw   <- .read_or_empty(methylation)
+  snv_m   <- .read_or_empty(snv)
+  cnv_m   <- .read_or_empty(cnv)
+  stage_v <- .read_stage_vector(stage)
+  
+  # Require at least one omics matrix
+  if (ncol(e_raw)==0 && ncol(m_raw)==0 && ncol(snv_m)==0 && ncol(cnv_m)==0) {
+    stop("At least one of expression/methylation/snv/cnv must be provided.", call. = FALSE)
+  }
+  
+  ## --------- 3) synchronize samples ---------
+  rn_list <- list()
+  if (nrow(e_raw)  > 0) rn_list[[length(rn_list)+1]] <- rownames(e_raw)
+  if (nrow(m_raw)  > 0) rn_list[[length(rn_list)+1]] <- rownames(m_raw)
+  if (nrow(snv_m) > 0) rn_list[[length(rn_list)+1]] <- rownames(snv_m)
+  if (nrow(cnv_m) > 0) rn_list[[length(rn_list)+1]] <- rownames(cnv_m)
+  if (!is.null(stage_v)) rn_list[[length(rn_list)+1]] <- names(stage_v)
+  if (!length(rn_list)) stop("No sample info provided.", call. = FALSE)
+  
+  samples <- Reduce(intersect, rn_list)
+  if (!length(samples)) stop("No overlapping sample names among provided matrices.", call. = FALSE)
+  
+  if (!is.null(stage_v)) {
+    stage_idx <- unname(stage_v[samples])
+    ord <- order(stage_idx, na.last = TRUE)
+    samples <- samples[ord]
+    
+    if (nrow(e_raw)  > 0) e_raw  <- e_raw[samples,,drop=FALSE]
+    if (nrow(m_raw)  > 0) m_raw  <- m_raw[samples,,drop=FALSE]
+    if (nrow(snv_m) > 0) snv_m <- snv_m[samples,,drop=FALSE]
+    if (nrow(cnv_m) > 0) cnv_m <- cnv_m[samples,,drop=FALSE]
+    stage_idx <- unname(stage_v[samples])
+  } else {
+    stage_idx <- rep(NA_integer_, length(samples))
+  }
+  
+  if (nrow(e_raw)  > 0) e_raw  <- e_raw[samples,,drop=FALSE]
+  if (nrow(m_raw)  > 0) m_raw  <- m_raw[samples,,drop=FALSE]
+  if (nrow(snv_m) > 0) snv_m <- snv_m[samples,,drop=FALSE]
+  if (nrow(cnv_m) > 0) cnv_m <- cnv_m[samples,,drop=FALSE]
+  
+  ## --------- 4) select common genes + induced subgraph ---------
+  cn_list <- list()
+  if (ncol(e_raw)  > 0) cn_list[[length(cn_list)+1]] <- colnames(e_raw)
+  if (ncol(m_raw)  > 0) cn_list[[length(cn_list)+1]] <- colnames(m_raw)
+  if (ncol(snv_m) > 0) cn_list[[length(cn_list)+1]] <- colnames(snv_m)
+  if (ncol(cnv_m) > 0) cn_list[[length(cn_list)+1]] <- colnames(cnv_m)
+  
+  common_genes <- Reduce(intersect, cn_list)
+  if (!length(common_genes)) stop("No common gene among provided matrices.", call. = FALSE)
+  
+  if (ncol(e_raw)  > 0) e_raw  <- e_raw[, common_genes, drop = FALSE]
+  if (ncol(m_raw)  > 0) m_raw  <- m_raw[, common_genes, drop = FALSE]
+  if (ncol(snv_m) > 0) snv_m <- snv_m[, common_genes, drop = FALSE]
+  if (ncol(cnv_m) > 0) cnv_m <- cnv_m[, common_genes, drop = FALSE]
+  
+  keep_vids <- which(igraph::V(graph_comp)$name %in% common_genes)
+  graph_comp <- igraph::induced_subgraph(graph_comp, vids = keep_vids)
+  
+  keep_names <- igraph::V(graph_comp)$name
+  old_mem    <- melanet_spg$membership
+  new_mem    <- old_mem[keep_names]
+  names(new_mem) <- keep_names
+  melanet_spg$membership <- new_mem
+  
+  ## --------- 5) parallel compute community_map_list ---------
+  out_dir <- dirname(out_json)
+  if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
+  
+  community_ids <- sort(unique(melanet_spg$membership))
+  
+  cl <- suppressWarnings(parallel::makeCluster(n_cores))
+  #parallel::clusterEvalQ(cl, {library(igraph); library(graphlayouts)})
+  parallel::clusterEvalQ(cl, {requireNamespace("igraph"); requireNamespace("graphlayouts")})
+  parallel::clusterExport(
+    cl,
+    varlist = c("graph_comp","melanet_spg","e_raw","m_raw","snv_m","cnv_m","TOP_N","samples","stage_idx","edges_df"),
+    envir = environment()
+  )
+  
+  community_map_list <- parallel::parLapply(cl, community_ids, function(comm) {
+    
+    vids <- which(melanet_spg$membership == comm)
+    subg <- igraph::induced_subgraph(graph_comp, vids = vids)
+    
+    xy  <- tryCatch(graphlayouts::layout_with_stress(subg) * 200,
+                    error = function(e) igraph::layout_nicely(subg))
+    deg <- igraph::degree(subg, mode = "all")
+    max_deg <- if (length(deg)) max(deg) else 0
+    
+    build_edges <- function(sg, keep_ids = NULL) {
+      ec <- igraph::ecount(sg)
+      if (ec == 0L) return(list())
+      
+      keep_nodes <- igraph::V(sg)$name
+      rows <- which(edges_df$from %in% keep_nodes & edges_df$to %in% keep_nodes)
+      if (length(rows) == 0) return(list())
+      
+      w_raw_vec <- if ("w_raw" %in% names(edges_df)) as.numeric(edges_df$w_raw[rows]) else as.numeric(edges_df$weight[rows])
+      
+      if (length(w_raw_vec) &&
+          is.finite(min(w_raw_vec, na.rm = TRUE)) &&
+          is.finite(max(w_raw_vec, na.rm = TRUE)) &&
+          min(w_raw_vec, na.rm = TRUE) < max(w_raw_vec, na.rm = TRUE)) {
+        w_min <- min(w_raw_vec, na.rm = TRUE)
+        w_max <- max(w_raw_vec, na.rm = TRUE)
+        w_norm_vec <- (w_raw_vec - w_min) / (w_max - w_min)
+      } else {
+        w_norm_vec <- rep(0, length(w_raw_vec))
+      }
+      
+      sd_w <- suppressWarnings(stats::sd(w_raw_vec, na.rm = TRUE))
+      if (length(w_raw_vec) && is.finite(sd_w) && sd_w > 0) {
+        w_z_vec <- as.numeric(scale(w_raw_vec))
+      } else {
+        w_z_vec <- rep(0, length(w_raw_vec))
+      }
+      
+      out <- vector("list", length(rows))
+      idx <- 0L
+      for (k in seq_along(rows)) {
+        r   <- rows[k]
+        src <- as.character(edges_df$from[r])
+        tgt <- as.character(edges_df$to[r])
+        
+        if (!is.null(keep_ids) && !(src %in% keep_ids && tgt %in% keep_ids)) next
+        
+        idx <- idx + 1L
+        out[[idx]] <- list(
+          source = src,
+          target = tgt,
+          weight = w_raw_vec[k],
+          w_raw  = w_raw_vec[k],
+          w_norm = w_norm_vec[k],
+          w_z    = w_z_vec[k],
+          interact_id = if ("interact" %in% names(edges_df)) {
+            as.character(edges_df$interact[r])
+          } else if ("interact_id" %in% names(edges_df)) {
+            as.character(edges_df$interact_id[r])
+          } else {
+            NA_character_
+          }
+        )
+      }
+      Filter(Negate(is.null), out)
+    }
+    
+    nodes <- lapply(seq_len(igraph::vcount(subg)), function(i) {
+      node_name <- igraph::V(subg)$name[i]
+      gene <- sub("@.*", "", node_name)
+      cellgroup <- ifelse(grepl("@", node_name), sub(".*@", "", node_name), NA)
+      
+      exp_norm <- if (ncol(e_raw) > 0 && gene %in% colnames(e_raw)) {
+        tmp <- e_raw[, gene]; rng <- range(tmp, na.rm = TRUE)
+        if (is.finite(rng[1]) && is.finite(rng[2]) && rng[1] < rng[2]) -1 + 2*(tmp-rng[1])/(rng[2]-rng[1]) else rep(0, length(tmp))
+      } else rep(NA_real_, length(samples))
+      
+      mty_norm <- if (ncol(m_raw) > 0 && gene %in% colnames(m_raw)) {
+        tmp <- m_raw[, gene]; rng <- range(tmp, na.rm = TRUE)
+        if (is.finite(rng[1]) && is.finite(rng[2]) && rng[1] < rng[2]) -1 + 2*(tmp-rng[1])/(rng[2]-rng[1]) else rep(0, length(tmp))
+      } else rep(NA_real_, length(samples))
+      
+      snv_raw <- if (ncol(snv_m) > 0 && gene %in% colnames(snv_m)) as.numeric(snv_m[, gene]) else rep(NA_real_, length(samples))
+      snv_norm <- if (all(is.na(snv_raw))) rep(NA_real_, length(samples)) else {
+        rng <- range(snv_raw, na.rm = TRUE)
+        if (is.finite(rng[1]) && is.finite(rng[2]) && rng[1] < rng[2]) -1 + 2*(snv_raw - rng[1])/(rng[2] - rng[1]) else rep(0, length(snv_raw))
+      }
+      snv_z <- if (all(is.na(snv_raw))) rep(NA_real_, length(samples)) else as.numeric(scale(snv_raw))
+      
+      cnv_norm <- if (ncol(cnv_m) > 0 && gene %in% colnames(cnv_m)) as.numeric(cnv_m[, gene]) else rep(NA_real_, length(samples))
+      
+      list(
+        id        = node_name,
+        gene      = gene,
+        cellgroup = cellgroup,
+        x         = xy[i,1],
+        y         = xy[i,2],
+        degree    = deg[node_name],
+        
+        exp_vals  = if (ncol(e_raw)>0 && gene %in% colnames(e_raw)) as.numeric(e_raw[, gene]) else rep(NA_real_, length(samples)),
+        mty_vals  = if (ncol(m_raw)>0 && gene %in% colnames(m_raw)) as.numeric(m_raw[, gene]) else rep(NA_real_, length(samples)),
+        cnv_vals  = if (ncol(cnv_m)>0 && gene %in% colnames(cnv_m)) as.numeric(cnv_m[, gene]) else rep(NA_real_, length(samples)),
+        
+        exp_norm  = exp_norm,
+        exp_z     = if (ncol(e_raw) > 0 && gene %in% colnames(e_raw)) as.numeric(scale(e_raw[, gene])) else rep(NA_real_, length(samples)),
+        mty_norm  = mty_norm,
+        mty_z     = if (ncol(m_raw) > 0 && gene %in% colnames(m_raw)) as.numeric(scale(m_raw[, gene])) else rep(NA_real_, length(samples)),
+        cnv_norm  = cnv_norm,
+        cnv_z     = if (ncol(cnv_m) > 0 && gene %in% colnames(cnv_m)) as.numeric(scale(cnv_m[, gene])) else rep(NA_real_, length(samples)),
+        snv_vals  = snv_raw,
+        snv_norm  = snv_norm,
+        snv_z     = snv_z,
+        stage_idx = as.integer(stage_idx)
+      )
+    })
+    
+    if (length(nodes) > TOP_N) {
+      scores <- vapply(nodes, function(n) mean(n$exp_vals, na.rm = TRUE), numeric(1))
+      scores[!is.finite(scores)] <- -Inf
+      keep_n   <- min(length(scores), TOP_N)
+      keep_idx <- order(scores, decreasing = TRUE)[seq_len(keep_n)]
+      keep_ids <- vapply(nodes[keep_idx], `[[`, "", "id")
+      nodes <- nodes[keep_idx]
+      edges <- build_edges(subg, keep_ids = keep_ids)
+      max_deg <- max(vapply(nodes, `[[`, 0.0, "degree"))
+    } else {
+      edges <- build_edges(subg)
+    }
+    
+    list(comm = comm, max_deg = max_deg, nodes = nodes, edges = edges)
+  })
+  
+  parallel::stopCluster(cl)
+  
+  community_map_list <- Filter(Negate(is.null), community_map_list)
+  if (!length(community_map_list)) stop("No community output.", call. = FALSE)
+  
+  jsonlite::write_json(community_map_list, out_json, auto_unbox = TRUE, pretty = FALSE, na = "null")
+  message(sprintf("Done. Saved: %s", out_json))
+  
+  invisible(community_map_list)
+}
+
+
+
+
+
+
