@@ -55,12 +55,8 @@ suppressPackageStartupMessages({
 })
 
 ## ---------- 1) Read graph (CSV) and community (megList) ----------
-edges_df <- read.csv(graph_edges, check.names = FALSE)      # edges 输入
+edges_df <- read.csv(graph_edges, check.names = FALSE)      # edges input
 nodes_df_tmp <- read.csv(graph_nodes, check.names = FALSE)
-#
-#nodes_df <- nodes_df_tmp["cellgroup"]
-
-
 
 if ("cellgroup" %in% names(nodes_df_tmp)) {
   nodes_df <- nodes_df_tmp["cellgroup"]
@@ -96,21 +92,13 @@ if (!("cellgroup" %in% names(nodes_df))) {
 
 if (!("weight" %in% names(edges_df))) edges_df$weight <- NA
 
-# Read community information from megList
-#a_memb <- read.csv(args["memb"], check.names = FALSE)
-##if (!all(c("gene","community") %in% names(a_memb))) stop("megList CSV cols：gene, community")
-#mem_vec <- setNames(as.integer(a_memb$community), a_memb$gene)
-#rm(a_memb)
-#########################
 # --- Read community information from megList ---
 a_memb <- read.csv(node_group, check.names = FALSE) 
 
-# 统一列名格式
+# Standardize column names
 names(a_memb) <- tolower(trimws(names(a_memb)))
 
-# 只保留 gene 和 community 两列（忽略 cellgroup）
-#a_memb <- a_memb[, c("cellgroup", "community")]
-
+# Retain only the gene and community columns (drop 'cellgroup')
 if ("cellgroup" %in% names(a_memb)) {
   a_memb <- a_memb[, c("cellgroup", "community")]
 } else if ("name" %in% names(a_memb)) {
@@ -123,8 +111,7 @@ if ("cellgroup" %in% names(a_memb)) {
 }
 
 
-
-# 保留唯一基因（同一个 gene 多次出现时只保留一次）
+# Keep unique genes (retain only one occurrence per gene)
 key_col <- if ("cellgroup" %in% names(a_memb)) {
   "cellgroup"
 } else if ("name" %in% names(a_memb)) {
@@ -134,7 +121,7 @@ key_col <- if ("cellgroup" %in% names(a_memb)) {
 } else {
   stop("❌ a_memb must contain a column named 'cellgroup', 'name', or 'gene'")
 }
-# 去重（不修改列名）
+# Retain unique genes (remove duplicate gene entries)
 a_memb <- a_memb[!duplicated(a_memb[[key_col]]), ]
 
 # 构建 membership 向量（key: cellgroup/name, value: community）
@@ -157,9 +144,6 @@ if ("cellgroup" %in% names(nodes_df)) {
 
 edges_df <- edges_df %>%
   select(from, to, everything())
-
-#edges_df <- edges_df %>%
-# mutate(interact_tag = paste0(from_gene, "@", to_gene))
 
 graph_comp <- graph_from_data_frame(
   d = edges_df,
@@ -185,97 +169,16 @@ melanet_spg <- structure(list(
 #####################################################
 message("🎯 Drawing colorful multi-edge network with curvature...")
 
-# 转为 tidygraph 对象
+# swicth to tidygraph object
 tg <- as_tbl_graph(graph_comp)
 
-# 检查多重边
+# Validate multi-edges
 dup_edges <- which_multiple(graph_comp)
 if (any(dup_edges)) {
   message(sprintf("✅ Found %d multi-edges in graph.", sum(dup_edges)))
 } else {
   message("ℹ No duplicated (multi) edges detected.")
 }
-
-# # 自动分配颜色（优先来源细胞群 from_cellgroup）
-# if ("from_cellgroup" %in% colnames(edges_df)) {
-#   n_groups <- length(unique(edges_df$from_cellgroup))
-#   cols <- brewer.pal(min(max(3, n_groups), 12), "Set3")
-#   color_field <- "from_cellgroup"
-# } else if ("interact" %in% colnames(edges_df)) {
-#   n_groups <- length(unique(edges_df$interact))
-#   cols <- brewer.pal(min(max(3, n_groups), 12), "Dark2")
-#   color_field <- "interact"
-# } else {
-#   cols <- "gray60"
-#   color_field <- NULL
-# }
-#
-#
-#
-#  # 自动选择颜色字段
-#  if ("from_cellgroup" %in% colnames(edges_df)) {
-#    color_field <- "from_cellgroup"
-#  } else if ("interact" %in% colnames(edges_df)) {
-#    color_field <- "interact"
-#  } else {
-#    color_field <- NULL
-#  }
-#
-#  # 动态颜色分配
-#  if (!is.null(color_field)) {
-#    n_groups <- length(unique(edges_df[[color_field]]))
-#    cols <- qualitative_hcl(n_groups, palette = "Dark 3")
-#  } else {
-#    cols <- "gray60"
-#  }
-#
-#
-#  # ✅ 在这里生成布局（Fruchterman–Reingold）
-#  set.seed(123)
-#  coords <- layout_with_fr(graph_comp, niter = 2000, repulserad = vcount(graph_comp)^3)
-#  coords <- coords * 5   # ✅ 放大整体布局，节点距离更大
-#
-#  # 使用 ggraph 绘制图形（使用 layout = "manual"）
-#  p <- ggraph(tg, layout = "manual", x = coords[,1], y = coords[,2]) +
-#    geom_edge_fan(
-#      aes_string(color = color_field, width = "weight"),
-#      arrow = arrow(length = unit(3, "mm"), type = "closed"),
-#      alpha = 0.8,
-#      end_cap = circle(2.5, 'mm'),
-#      start_cap = circle(2.5, 'mm'),
-#      strength = 3.5,   # ✅ 增加曲率，使多重边明显分开
-#      n = 100,
-#      show.legend = TRUE
-#    ) +
-#    geom_node_point(
-#      aes(size = degree_all),
-#      color = "skyblue3",
-#      alpha = 0.9
-#    ) +
-#    geom_node_text(
-#      aes(label = name),
-#      repel = TRUE,
-#      size = 3.8,
-#      color = "black",
-#      family = "Arial"
-#    ) +
-#    scale_edge_color_manual(values = cols, name = ifelse(is.null(color_field), "Edge", color_field)) +
-#    scale_edge_width(range = c(0.5, 2.8)) +
-#    scale_size(range = c(2.5, 8.5)) +
-#    theme_void(base_size = 15) +
-#    theme(
-#      legend.position = "right",
-#      legend.title = element_text(size = 12, face = "bold"),
-#      legend.text = element_text(size = 10),
-#      plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
-#      plot.margin = margin(20, 40, 20, 20)  # ✅ 防止右侧被裁剪
-#    ) +
-#    ggtitle("CellChat Multi-edge Gene Communication Network (Curved + Colored)")
-#
-#  print(p)
-#  message("✅ Done — colorful multi-edge network plotted successfully.")
-
-########################################################################
 ##---------- 2) Read omics matrices ----------
 read_or_empty <- function(path) {
   if (is.null(path) || path %in% c("", "NA", "NULL", "null", "-") || !file.exists(path)) {
@@ -330,12 +233,6 @@ if (sgcell_id) {
     cnv_m <- as.data.frame(t(cnv_m))
   }
 }
-#e_raw<-read.csv(args["expr"])
-#e_raw_test<-t(e_raw)
-#e_raw_tmp<-e_raw
-#e_raw<-NULL
-#e_raw<-e_raw_test
-############################################
 
 stage_v <- read_stage_vector(sample_group)  # stage
 # At least one omics file must be non-empty
@@ -345,8 +242,6 @@ stage_v <- read_stage_vector(sample_group)  # stage
 if (ncol(e_raw)==0 && ncol(m_raw)==0 && ncol(snv_m)==0 && ncol(cnv_m)==0 && is.null(stage_v)) {
   stop("At least one of expr/meth/snv/cnv/stage must be provided.")
 }
-
-
 
 ## ---------- 3) Synchronize samples ----------
 #samples <- Reduce(intersect, list(rownames(e_raw), rownames(m_raw), rownames(snv_m), rownames(cnv_m)))
@@ -379,10 +274,6 @@ if (!is.null(stage_v)) {
   stage_idx <- rep(NA_integer_, length(samples))
 }
 
-#e_raw <- e_raw[samples,,drop=FALSE]
-#m_raw <- m_raw[samples,,drop=FALSE]
-#snv_m <- snv_m[samples,,drop=FALSE]
-#cnv_m <- cnv_m[samples,,drop=FALSE]
 if (nrow(e_raw)  > 0) e_raw <- e_raw[samples,,drop=FALSE]
 if (nrow(m_raw)  > 0) m_raw <- m_raw[samples,,drop=FALSE]
 if (nrow(snv_m) > 0) snv_m <- snv_m[samples,,drop=FALSE]
@@ -399,10 +290,6 @@ if (ncol(cnv_m) > 0) cn_list[[length(cn_list)+1]] <- colnames(cnv_m)
 common_genes <- Reduce(intersect, cn_list)
 if (!length(common_genes)) stop("no common gene among provided matrices")
 
-#e_raw  <- e_raw[, common_genes, drop = FALSE]
-#m_raw  <- m_raw[, common_genes, drop = FALSE]
-#snv_m  <- snv_m[, common_genes, drop = FALSE]
-#cnv_m  <- cnv_m[, common_genes, drop = FALSE]
 if (ncol(e_raw)  > 0) e_raw <- e_raw[, common_genes, drop = FALSE]
 if (ncol(m_raw)  > 0) m_raw <- m_raw[, common_genes, drop = FALSE]
 if (ncol(snv_m) > 0) snv_m <- snv_m[, common_genes, drop = FALSE]
@@ -423,7 +310,6 @@ if (!dir.exists(dirname(out_json))) dir.create(dirname(out_json), recursive = TR
 
 tic("build community_map")
 community_ids <- sort(unique(melanet_spg$membership))  # Keep compatibility with original layout (NA values not explicitly removed)
-#cl <- makeCluster(max(1L, detectCores() - 1L))
 cl <- suppressWarnings(makeCluster(max(1L, n_cores)))
 clusterEvalQ(cl, {library(igraph); library(graphlayouts);library(stats)})
 clusterExport(cl, varlist = c("graph_comp","melanet_spg","e_raw","m_raw","snv_m","cnv_m","TOP_N","samples","stage_idx","edges_df"), envir = environment())
@@ -436,54 +322,24 @@ community_map_list <- parLapply(cl, community_ids, function(comm) {
   xy  <- tryCatch(layout_with_stress(subg) * 200, error = function(e) layout_nicely(subg))
   deg <- degree(subg,mode = "all")
   max_deg <- if (length(deg)) max(deg) else 0
-  ##edge raw value
-  #include all information of the edges
-  # build_edges <- function(sg, keep_ids = NULL) {
-  #   ec <- ecount(sg)
-  #   if (ec == 0L) return(list())
-  #   out <- vector("list", ec)
-  #   for (j in seq_len(ec)) {
-  #     e <- ends(sg, j)
-  #     s <- V(sg)[e[1]]$name
-  #     t <- V(sg)[e[2]]$name
-  #
-  #     row_idx <- which(edges_df$from == s & edges_df$to == t)
-  #     interact_tag <- if (length(row_idx) > 0) edges_df$interact_tag[row_idx[1]] else NA
-  #     interact_val <- if (length(row_idx) > 0 && "interact" %in% names(edges_df))
-  #       edges_df$interact[row_idx[1]] else NA
-  #
-  #     if (!is.null(keep_ids) && !(s %in% keep_ids && t %in% keep_ids)) next
-  #     out[[j]] <- list(
-  #       source = s,
-  #       target = t,
-  #       weight = w_raw[j],   # Maintain backward compatibility
-  #       w_raw  = w_raw[j],
-  #       w_norm = w_norm[j],
-  #       w_z    = w_z[j],
-  #       interact_id = interact_val,
-  #       interact_tag = interact_tag
-  #     )
-  #   }
-  #   Filter(Negate(is.null), out)
-  # }
   build_edges <- function(sg, keep_ids = NULL) {
     ec <- ecount(sg)
     if (ec == 0L) return(list())
     
     keep_nodes <- V(sg)$name
     
-    # 找到这个 community 中所有边对应的全局行
+    # Find all global rows corresponding to edges in this community
     rows <- which(edges_df$from %in% keep_nodes & edges_df$to %in% keep_nodes)
     if (length(rows) == 0) return(list())
     
-    # 1) w_raw：直接来自原始 weight
+    # 1) w_raw: directly from the original weight
     w_raw_vec <- if ("w_raw" %in% names(edges_df)) {
       as.numeric(edges_df$w_raw[rows])
     } else {
       as.numeric(edges_df$weight[rows])
     }
     
-    # 2) w_norm：由 w_raw 归一化到 [-1, 1]
+    # 2) w_norm: normalize w_raw to [-1, 1]
     if (length(w_raw_vec) &&
         is.finite(min(w_raw_vec, na.rm = TRUE)) &&
         is.finite(max(w_raw_vec, na.rm = TRUE)) &&
@@ -496,7 +352,7 @@ community_map_list <- parLapply(cl, community_ids, function(comm) {
       w_norm_vec <- rep(0, length(w_raw_vec))
     }
     
-    # 3) w_z：由 w_raw 做 z-score
+    # 3) w_z: z-score computed from w_raw
     sd_w <- suppressWarnings(sd(w_raw_vec, na.rm = TRUE))
     if (length(w_raw_vec) && is.finite(sd_w) && sd_w > 0) {
       w_z_vec <- as.numeric(scale(w_raw_vec))
@@ -512,7 +368,7 @@ community_map_list <- parLapply(cl, community_ids, function(comm) {
       src <- as.character(edges_df$from[r])
       tgt <- as.character(edges_df$to[r])
       
-      # Top-N 节点过滤
+      # Top-N node filtering
       if (!is.null(keep_ids) && !(src %in% keep_ids && tgt %in% keep_ids)) {
         next
       }
@@ -521,10 +377,10 @@ community_map_list <- parLapply(cl, community_ids, function(comm) {
       out[[idx]] <- list(
         source = src,
         target = tgt,
-        weight = w_raw_vec[k],     # 原始权重
-        w_raw  = w_raw_vec[k],     # 和 weight 一致
-        w_norm = w_norm_vec[k],    # 来自当前 community 的 w_raw
-        w_z    = w_z_vec[k],       # 同上
+        weight = w_raw_vec[k],     # original weight
+        w_raw  = w_raw_vec[k],     # original weight
+        w_norm = w_norm_vec[k],    # w_raw comes from current community 
+        w_z    = w_z_vec[k],       # 
         interact_id = if ("interact" %in% names(edges_df)) {
           as.character(edges_df$interact[r])
         } else if ("interact_id" %in% names(edges_df)) {
@@ -550,17 +406,7 @@ community_map_list <- parLapply(cl, community_ids, function(comm) {
     cellgroup <- ifelse(grepl("@", node_name),
                         sub(".*@", "", node_name),
                         NA)
-    
-    #exp_norm <- if (gene %in% colnames(e_raw)) {
-    # tmp <- e_raw[, gene]; rng <- range(tmp, na.rm = TRUE)
-    # if (is.finite(rng[1]) && is.finite(rng[2]) && rng[1] < rng[2]) -1 + 2*(tmp-rng[1])/(rng[2]-rng[1]) else rep(0, length(tmp))
-    # } else NA
-    # mty_norm <- if (gene %in% colnames(m_raw)) {
-    #   tmp <- m_raw[, gene]; rng <- range(tmp, na.rm = TRUE)
-    #   if (is.finite(rng[1]) && is.finite(rng[2]) && rng[1] < rng[2]) -1 + 2*(tmp-rng[1])/(rng[2]-rng[1]) else rep(0, length(tmp))
-    # } else NA
-    #snv_vals <- if (gene %in% colnames(snv_m)) as.numeric(snv_m[, gene] > 0) else NA
-    #cnv_norm <- if (gene %in% colnames(cnv_m)) as.numeric(cnv_m[, gene]) else NA
+
     exp_norm <- if (ncol(e_raw) > 0 && gene %in% colnames(e_raw)) {
       tmp <- e_raw[, gene]; rng <- range(tmp, na.rm = TRUE)
       if (is.finite(rng[1]) && is.finite(rng[2]) && rng[1] < rng[2]) -1 + 2*(tmp-rng[1])/(rng[2]-rng[1]) else rep(0, length(tmp))
@@ -571,7 +417,7 @@ community_map_list <- parLapply(cl, community_ids, function(comm) {
       if (is.finite(rng[1]) && is.finite(rng[2]) && rng[1] < rng[2]) -1 + 2*(tmp-rng[1])/(rng[2]-rng[1]) else rep(0, length(tmp))
     } else rep(NA_real_, length(samples))
     
-    # ----- SNV：保留原始值 + norm + zscore -----
+    # ----- SNV：original value + norm + zscore -----
     snv_raw <- if (ncol(snv_m) > 0 && gene %in% colnames(snv_m)) {
       as.numeric(snv_m[, gene])
     } else {
@@ -603,30 +449,21 @@ community_map_list <- parLapply(cl, community_ids, function(comm) {
     cnv_norm <- if (ncol(cnv_m)>0 && gene %in% colnames(cnv_m)) as.numeric(cnv_m[, gene]) else rep(NA_real_, length(samples))
     
     list(
-      id        = node_name,   # <<< 保留完整节点名 FGF7@APOE+FIB
-      gene      = gene,        # <<< 新增字段
-      cellgroup = cellgroup,   # <<< 新增字段
-      #id        = gene,
+      id        = node_name,   
+      gene      = gene,        
+      cellgroup = cellgroup,   
       x         = xy[i,1],
       y         = xy[i,2],
-      #degree    = deg[gene],
       degree    = deg[node_name],
-      #exp_vals  = as.numeric(e_raw[, gene]),
       exp_vals  = if (ncol(e_raw)>0 && gene %in% colnames(e_raw)) as.numeric(e_raw[, gene]) else rep(NA_real_, length(samples)),
       mty_vals  = if (ncol(m_raw)>0 && gene %in% colnames(m_raw)) as.numeric(m_raw[, gene]) else rep(NA_real_, length(samples)),
       cnv_vals  = if (ncol(cnv_m)>0 && gene %in% colnames(cnv_m)) as.numeric(cnv_m[, gene]) else rep(NA_real_, length(samples)),
-      
       exp_norm  = exp_norm,
-      #exp_z     = if (gene %in% colnames(e_raw)) as.numeric(scale(e_raw[, gene])) else NA,
-      #mty_vals  = as.numeric(m_raw[, gene]),
-      exp_z  = if (ncol(e_raw) > 0 && gene %in% colnames(e_raw))  as.numeric(scale(e_raw[, gene])) else rep(NA_real_, length(samples)),  # 改5
+      exp_z  = if (ncol(e_raw) > 0 && gene %in% colnames(e_raw))  as.numeric(scale(e_raw[, gene])) else rep(NA_real_, length(samples)),  
       mty_norm  = mty_norm,
-      #mty_z     = if (gene %in% colnames(m_raw)) as.numeric(scale(m_raw[, gene])) else NA,
-      mty_z  = if (ncol(m_raw) > 0 && gene %in% colnames(m_raw))  as.numeric(scale(m_raw[, gene])) else rep(NA_real_, length(samples)),  # 改
-      #cnv_vals  = as.numeric(cnv_m[, gene]),
+      mty_z  = if (ncol(m_raw) > 0 && gene %in% colnames(m_raw))  as.numeric(scale(m_raw[, gene])) else rep(NA_real_, length(samples)), 
       cnv_norm  = cnv_norm,
-      #cnv_z     = if (gene %in% colnames(cnv_m)) as.numeric(scale(cnv_m[, gene])) else NA,
-      cnv_z  = if (ncol(cnv_m) > 0 && gene %in% colnames(cnv_m))  as.numeric(scale(cnv_m[, gene])) else rep(NA_real_, length(samples)),  # 改7
+      cnv_z  = if (ncol(cnv_m) > 0 && gene %in% colnames(cnv_m))  as.numeric(scale(cnv_m[, gene])) else rep(NA_real_, length(samples)),  
       snv_vals  = snv_raw,
       snv_norm  = snv_norm,
       snv_z     = snv_z,
@@ -634,15 +471,7 @@ community_map_list <- parLapply(cl, community_ids, function(comm) {
     )
   })
   
-  ## Edges
-  #edges <- lapply(seq_len(ecount(subg)), function(j) {
-  # e <- ends(subg, j)
-  # list(source = V(subg)[e[1]]$name,
-  #      target = V(subg)[e[2]]$name,
-  #      weight = E(subg)$weight[j])
-  # })
-  #edges <- build_edges(subg)
-  
+   
   ## ---------- Keep only Top-100 nodes within each community (same logic as original) ----------
   if (length(nodes) > TOP_N) {
     
@@ -679,5 +508,5 @@ if (!dir.exists(out_dir)) {
 
 write_json(community_map_list, out_json, auto_unbox = TRUE, pretty = FALSE, na = "null")
 cat(sprintf("✔ Done. Saved: %s\n", out_json))
-invisible(community_map_list)  # 返回结果但不打印
+invisible(community_map_list)  # Return the result silently
 }
