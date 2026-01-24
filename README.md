@@ -1,7 +1,9 @@
 # RingNet: an interactive platform for multi-modal data visualization in networks
+[![Static Badge](https://img.shields.io/badge/Preprint-Biorxiv-blue)](https://doi.org/10.64898/2026.01.20.700593)
 
 RingNet is a tool for visualizing multimodal data in networks. You can use it to create networks with one or more data sets online (https://fip-128-214-252-149.kaj.poutavm.fi/cmt_figures/). 
 Alternatively, you can use the R package to export a `JSON` file that can be customized and visualized further using our JavaScript frontend.
+<img width="1900" height="652" alt="Image" src="https://github.com/user-attachments/assets/229ba007-7f1a-4a86-ab71-acd61612552d" />
 
 ## Overview
 The core function is `ringnet`, which:
