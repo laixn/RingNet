@@ -1,5 +1,5 @@
 # RingNet: an interactive platform for multi-modal data visualization in networks
-[![Static Badge](https://img.shields.io/badge/Preprint-Biorxiv-blue)](https://doi.org/10.64898/2026.01.20.700593)
+[![Static Badge](https://img.shields.io/badge/Preprint-BioRxiv-darkred)](https://doi.org/10.64898/2026.01.20.700593)
 
 RingNet is a tool for visualizing multimodal data in networks. You can use it to create networks with one or more data sets online (https://fip-128-214-252-149.kaj.poutavm.fi/cmt_figures/). 
 Alternatively, you can use the R package to export a `JSON` file that can be customized and visualized further using our JavaScript frontend.
@@ -226,11 +226,10 @@ Submitted (2026).
 ```bash
 @article{Zhang_RingNet_2026,
   title={RingNet: an interactive platform for multi-modal data visualization in networks},
-  author={Liang Zhang, Fei Liu, Xin Lai},
-  journal={Submitted},
-  doi={},
-  year={2026}
-}
+  author={Liang Zhang, Xin Lai},
+  journal={Preprint},
+  doi={10.64898/2026.01.20.700593},
+  year={2026}}
 ```
 
 © [Lai Lab](https://sites.google.com/view/lai-lab) - This code is made available under the GPLv3 License and is available for non-commercial academic purposes.
