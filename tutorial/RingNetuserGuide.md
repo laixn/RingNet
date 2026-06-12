@@ -13,8 +13,10 @@ This section controls network selection, layout, degree filtering, search, and e
 <p>
 
 ### Network Selection
-Select the specific network or community you wish to explore. Note that **only one network** is displayed at a time to maintain clarity.
 
+<p align = "justify">Network Selection: Users select a network from a dropdown menu. Only one network is rendered at a time. This improves performance and clarity.Select the specific network or community you wish to explore. Note that **only one network** is displayed at a time to maintain clarity.
+<p>
+  
 ### Layout Adjustment
 Arrange nodes on the canvas using various algorithms. Changing the layout **only affects node positions** and does not modify the underlying data.
 
