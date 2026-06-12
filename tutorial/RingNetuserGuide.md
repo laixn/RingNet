@@ -82,7 +82,8 @@ Refine your view by selecting specific data layers and scales:
 
 ## 3. Pattern Discovery Module
 
-<img width="904" height="80" alt="image" src="https://github.com/user-attachments/assets/274dba96-5b0a-4872-a238-ca0ede7ecee4" />
+<img width="1844" height="152" alt="image" src="https://github.com/user-attachments/assets/587d11bc-a901-46af-abff-72c2a25ac81f" />
+
 
 <p align="justify">
 Pattern Discovery identifies anti correlated multi omics patterns such as high expression with low methylation. Thresholds define high and low states, while intensity is computed using z score based measures
@@ -96,7 +97,8 @@ Pattern Discovery typically compares **Data1** and **Data2** using Z-score thres
 
 ### Analysis Modes (Group-aware vs. Group-free)
 
-<img width="904" height="45" alt="image" src="https://github.com/user-attachments/assets/2fb002b4-a4db-43b2-b91d-e5a83cb87642" />
+<img width="1842" height="63" alt="image" src="https://github.com/user-attachments/assets/eaea3244-9901-4ee3-bd93-2438c2e921f9" />
+
 
 Depending on whether you have stage or group information, the viewer adjusts its metrics:
 
