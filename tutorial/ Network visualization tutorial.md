@@ -1,4 +1,4 @@
-# RingNet Frontend User Guide
+# Network visualization tutorial
 
 ## Quick Overview
 
