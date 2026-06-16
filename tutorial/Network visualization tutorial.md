@@ -134,9 +134,159 @@ Fine-tune the connections between nodes:
 - **Show Weights:** Toggle numeric labels on edges.
 - **Edge Data Norm:** Choose between `Raw`, `Min-Max`, or `Z-score`.
 - **Color by `interact_id`:** Color edges by interaction type.
+- 
+## 6. Color Palette 
+<img width="1058" height="143" alt="image" src="https://github.com/user-attachments/assets/2de0ab08-c883-41e3-bc4d-1b83982ed7e4" />
 
+The palette controls are displayed above the Data 1–Data 4 color selectors.
 
-## 6. Viewer Types
+### Available options:
+
+- **The New England Journal of Medicine**
+- **Nature Cancer**
+- **Lancet**
+- **Science**
+
+Only one palette can be selected at a time.
+
+The palette checkboxes are mutually exclusive:
+
+Selecting one palette automatically deselects the previously selected palette.
+Unchecking the currently selected palette restores the original RingNet colors.
+Manually changing any Data or Edge color automatically clears the selected palette.
+### Default RingNet colors
+
+When no journal palette is selected, RingNet uses its original default colors.
+
+The original Data 1–Data 4 color selectors and Edge color selectors remain editable.
+
+To restore the original colors:
+
+Uncheck the active journal palette.
+RingNet automatically returns to the default color configuration.
+### The New England Journal of Medicine palette
+
+Select: The New England Journal of Medicine
+
+Color configuration:
+
+Data 1: [#0072B5FF, #FFFFFFFF, #BC3C29FF]
+
+Data 2: [#20854EFF, #FFFFFFFF, #E18727FF]
+
+Data 3: [#FFDC91FF, #FFFFFFFF, #7876B1FF]
+
+Data 4: [#FFFFFFFF, #FFFFFFFF, #6F99ADFF]
+
+Edge:   [#7FBC41FF, #F7F7F7FF, #DE77AEFF]
+
+### Nature Cancer palette
+
+Select: Nature Cancer
+
+Color configuration:
+
+Data 1: [#4DBBD5FF, #FFFFFFFF, #E64B35FF]
+
+Data 2: [#00A087FF, #FFFFFFFF, #7E6148FF]
+
+Data 3: [#F39B7FFF, #FFFFFFFF, #8491B4FF]
+
+Data 4: [#FFFFFFFF, #FFFFFFFF, #1A1A1AFF]
+
+Edge:   [#D6604DFF, #F7F7F7FF, #878787FF]
+
+### Lancet palette
+
+Select: Lancet
+
+Color configuration:
+
+Data 1: [#00468BFF, #FFFFFFFF, #ED0000FF]
+
+Data 2: [#42B540FF, #FFFFFFFF, #FDAF91FF]
+
+Data 3: [#0099B4FF, #FFFFFFFF, #925E9FFF]
+
+Data 4: [#FFFFFFFF, #FFFFFFFF, #1B1919FF]
+
+Edge:   [#42B540FF, #F7F7F7FF, #AD002AFF]
+
+### Science palette
+
+Select: Palette: Science
+
+Data 1: [#3B4992FF, #FFFFFFFF, #EE0000FF]
+
+Data 2: [#008B45FF, #FFFFFFFF, #A20056FF]
+
+Data 3: [#B35806FF, #FFFFFFFF, #631879FF]
+
+Data 4: [#FFFFFFFF, #FFFFFFFF, #1B1919FF]
+
+Edge:   [#008280FF, #F7F7F7FF, #BB0021FF]
+
+### Eight-digit hexadecimal colors
+
+RingNet palette definitions use eight-digit hexadecimal color values:
+
+#RRGGBBAA
+
+The components are:
+
+RR: red channel
+GG: green channel
+BB: blue channel
+AA: alpha or transparency channel
+
+Example:
+
+#0072B5FF
+
+Here:
+
+00 is the red value
+72 is the green value
+B5 is the blue value
+FF means fully opaque
+
+Because the browser color picker uses six-digit hexadecimal values, RingNet displays the RGB portion in the color input while preserving the intended fully opaque appearance.
+
+### Directed and undirected networks
+
+The palette behavior is identical in directed and undirected network viewers.
+
+The palette changes only the visual color mapping. It does not change:
+
+- **Node values**
+- **Edge weights**
+- **Network topology**
+- **Direction information**
+- **Community structure**
+- **Data normalization**
+- **Filtering thresholds**
+- **Pattern Discovery results**
+- **Difference displaying results**
+- **Similarity displaying results**
+
+For directed networks, arrow direction and directed edge structure are preserved.
+
+For undirected networks, merged edge structure and undirected rendering are preserved.
+
+### Saving palette settings
+
+The currently selected palette is included in the viewer configuration.
+
+When using:
+
+Save JSON
+Save snapshot
+
+RingNet stores the active palette selection together with the current visualization settings.
+
+When the configuration is restored, the corresponding palette is also restored.
+
+## 7. Viewer Types
 
 | Directed Viewer | Undirected Viewer |
 | :--- | :--- |
