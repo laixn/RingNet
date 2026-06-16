@@ -6,7 +6,7 @@
 <p>
 
 ## 1. Network control panel
-<img width="904" height="68" alt="image" src="https://github.com/user-attachments/assets/4dc45df5-5691-410a-872a-f776ef70187f" />
+<img width="1046" height="65" alt="image" src="https://github.com/user-attachments/assets/76446a59-0bc9-4d36-9dde-fbbe0c3a1551" />
 
 <p align="justify">
 This section controls network selection, layout, degree filtering, search, and export functions. Users can select networks, adjust layout, define degree range filters, and export results in PNG, SVG, or JSON formats.
