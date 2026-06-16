@@ -169,6 +169,8 @@ RingNet automatically returns to the default color configuration.
 
 Select: The New England Journal of Medicine
 
+<img width="696" height="61" alt="image" src="https://github.com/user-attachments/assets/ce48f339-c6ed-4dcb-9149-f753bc6137ce" />
+
 Color configuration:
 
 Data 1: [#0072B5FF, #FFFFFFFF, #BC3C29FF]
@@ -184,6 +186,8 @@ Edge:   [#7FBC41FF, #F7F7F7FF, #DE77AEFF]
 ### Nature Cancer palette
 
 Select: Nature Cancer
+
+<img width="699" height="64" alt="image" src="https://github.com/user-attachments/assets/fece91fa-018e-4fac-81c1-ab589ae2081e" />
 
 Color configuration:
 
@@ -201,6 +205,8 @@ Edge:   [#D6604DFF, #F7F7F7FF, #878787FF]
 
 Select: Lancet
 
+<img width="699" height="60" alt="image" src="https://github.com/user-attachments/assets/c76eb44d-91f6-494a-b04f-c98f798312c8" />
+
 Color configuration:
 
 Data 1: [#00468BFF, #FFFFFFFF, #ED0000FF]
@@ -216,6 +222,8 @@ Edge:   [#42B540FF, #F7F7F7FF, #AD002AFF]
 ### Science palette
 
 Select: Palette: Science
+
+<img width="691" height="65" alt="image" src="https://github.com/user-attachments/assets/8b35a056-e73c-497c-844b-1dc93c72455a" />
 
 Data 1: [#3B4992FF, #FFFFFFFF, #EE0000FF]
 
