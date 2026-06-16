@@ -88,7 +88,6 @@ Refine your view by selecting specific data layers and scales:
 
 <img width="1844" height="152" alt="image" src="https://github.com/user-attachments/assets/587d11bc-a901-46af-abff-72c2a25ac81f" />
 
-
 <p align="justify">
 Pattern Discovery identifies anti correlated multi omics patterns such as high expression with low methylation. Thresholds define high and low states, while intensity is computed using z score based measures
 <p>
@@ -102,7 +101,6 @@ Pattern Discovery typically compares **Data1** and **Data2** using Z-score thres
 ### Analysis Modes (Group-aware vs. Group-free)
 
 <img width="1842" height="63" alt="image" src="https://github.com/user-attachments/assets/eaea3244-9901-4ee3-bd93-2438c2e921f9" />
-
 
 Depending on whether you have stage or group information, the viewer adjusts its metrics:
 
@@ -143,38 +141,23 @@ Fine-tune the connections between nodes:
 
 <img width="1038" height="101" alt="image" src="https://github.com/user-attachments/assets/f7471bb6-1fa0-4ceb-952a-8790943b682c" />
 
+Only one palette can be selected at a time. The palette checkboxes are mutually exclusive. Selecting one palette automatically deselects the previously selected palette. Unchecking the currently selected palette restores the original RingNet colors. Manually changing any Data or Edge color automatically clears the selected palette. 
+
+The RingNet palette uses eight-digit hexadecimal color values. For example, in the format #RRGGBBAA, RR represents the red channel, GG represents the green channel, BB represents the blue channel, and AA represents the alpha or transparency channel. For example, in the value #0072B5FF, 00 is the red value, 72 is the green value, B5 is the blue value, and FF indicates a solid color. Because the browser color picker uses six-digit hexadecimal values, RingNet displays the RGB portion in the color input while preserving the intended fully opaque appearance.
+
 The palette controls are displayed above the Data 1–Data 4 color selectors.
 
 ### Available options:
 
-- **The New England Journal of Medicine**
-- **Nature Cancer**
-- **Lancet**
-- **Science**
+- **Default color palette**
 
-Only one palette can be selected at a time.
+<img width="904" height="68" alt="image" src="https://github.com/user-attachments/assets/a0014191-d35f-44b6-9d47-5a116b087242" />
 
-The palette checkboxes are mutually exclusive:
+When no journal palette is selected, RingNet uses its original default colors including blue, white, and red. The original Data 1–Data 4 color selectors and Edge color selectors remain editable. To restore the original colors: Uncheck the active journal palette. RingNet automatically returns to the default color configuration.
 
-Selecting one palette automatically deselects the previously selected palette.
-Unchecking the currently selected palette restores the original RingNet colors.
-Manually changing any Data or Edge color automatically clears the selected palette.
-### Default RingNet colors
-
-When no journal palette is selected, RingNet uses its original default colors.
-
-The original Data 1–Data 4 color selectors and Edge color selectors remain editable.
-
-To restore the original colors:
-
-Uncheck the active journal palette.
-RingNet automatically returns to the default color configuration.
-### The New England Journal of Medicine palette
-
-Select: NEJM (The New England Journal of Medicine)
+- **The New England Journal of Medicine (NEJM)**
 
 <img width="687" height="70" alt="image" src="https://github.com/user-attachments/assets/4a5a83c0-518c-4cbb-8189-4b010ab2e231" />
-
 
 Color configuration:
 
@@ -188,9 +171,7 @@ Data 4: [#FFFFFFFF, #FFFFFFFF, #6F99ADFF]
 
 Edge: [#7FBC41FF, #F7F7F7FF, #DE77AEFF]
 
-### Nature Cancer palette
-
-Select: Nature Cancer
+- **Nature Cancer**
 
 <img width="687" height="64" alt="image" src="https://github.com/user-attachments/assets/3bdf568e-8b1c-4e22-be34-61956a1500d9" />
 
@@ -206,9 +187,7 @@ Data 4: [#FFFFFFFF, #FFFFFFFF, #1A1A1AFF]
 
 Edge: [#D6604DFF, #F7F7F7FF, #878787FF]
 
-### Lancet palette
-
-Select: Lancet
+- **Lancet**
 
 <img width="684" height="67" alt="image" src="https://github.com/user-attachments/assets/b754bc87-bdb1-4195-991e-ac886437b829" />
 
@@ -224,9 +203,7 @@ Data 4: [#FFFFFFFF, #FFFFFFFF, #1B1919FF]
 
 Edge: [#42B540FF, #F7F7F7FF, #AD002AFF]
 
-### Science palette
-
-Select: Science
+- **Science**
 
 <img width="687" height="65" alt="image" src="https://github.com/user-attachments/assets/a81c6d64-7be5-4d36-acc9-59a870407ecf" />
 
@@ -240,67 +217,26 @@ Data 4: [#FFFFFFFF, #FFFFFFFF, #1B1919FF]
 
 Edge: [#008280FF, #F7F7F7FF, #BB0021FF]
 
-### Eight-digit hexadecimal colors
-
-RingNet palette definitions use eight-digit hexadecimal color values:
-
-#RRGGBBAA
-
-The components are:
-
-RR: red channel
-
-GG: green channel
-
-BB: blue channel
-
-AA: alpha or transparency channel
-
-Example: #0072B5FF
-
-00 is the red value
-
-72 is the green value
-
-B5 is the blue value
-
-FF means fully opaque
-
-Because the browser color picker uses six-digit hexadecimal values, RingNet displays the RGB portion in the color input while preserving the intended fully opaque appearance.
-
 ### Directed and undirected networks
 
-The palette behavior is identical in directed and undirected network viewers.
+The palette behavior is identical in directed and undirected network viewers. The palette changes only the visual color mapping. It does not change:
 
-The palette changes only the visual color mapping. It does not change:
+- Node values
+- Edge weights
+- Network topology
+- Direction information
+- Community structure
+- Data normalization
+- Filtering thresholds
+- Pattern Discovery results
+- Difference displaying results
+- Similarity displaying results
 
-- **Node values**
-- **Edge weights**
-- **Network topology**
-- **Direction information**
-- **Community structure**
-- **Data normalization**
-- **Filtering thresholds**
-- **Pattern Discovery results**
-- **Difference displaying results**
-- **Similarity displaying results**
-
-For directed networks, arrow direction and directed edge structure are preserved.
-
-For undirected networks, merged edge structure and undirected rendering are preserved.
+For directed networks, arrow direction and directed edge structure are preserved. For undirected networks, merged edge structure and undirected rendering are preserved.
 
 ### Saving palette settings
 
-The currently selected palette is included in the viewer configuration.
-
-When using:
-
-Save JSON
-Save snapshot
-
-RingNet stores the active palette selection together with the current visualization settings.
-
-When the configuration is restored, the corresponding palette is also restored.
+The currently selected palette is included in the viewer configuration. When using: `Save JSON` or `Save Snapshot`, RingNet stores the active palette selection and the current visualization settings together. When the configuration is restored, the corresponding palette is restored as well.
 
 ## 7. Viewer Types
 
