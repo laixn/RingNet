@@ -41,7 +41,7 @@ Keep your work safe and ready for publication with these tools:
 - **Save PNG:** Export the current view as a standard image.
 - **Save SVG:** Export as an editable vector image (Recommended for **publications**).
 - **Save JSON:** Export the raw network data in JSON format.
-- **Save Snapshot:** **Highly Recommended.** Saves the *entire* visualization state, including:
+- **Save Snapshot (Highly Recommended):** Save the entire visualization setting customized by the user in a **zip file**  and the user can upload the **zip file** to restore the view. This includes:
   - Node positions, colors, and filters.
   - Pattern Discovery and Similarity/Difference settings.
   - Highlighted nodes/edges and search states.
@@ -56,6 +56,9 @@ Keep your work safe and ready for publication with these tools:
 <img width="904" height="68" alt="image" src="https://github.com/user-attachments/assets/a0014191-d35f-44b6-9d47-5a116b087242" />
 
 This section defines how multi modal data is visualized using concentric rings within nodes.
+
+### Color Palette:
+We provide four color palettes including the style from the New England Journal of Medicine (NEJM), Nature Cancer, Lancet, and Science for users to choose (see Section 6 for details).
 
 ### Different data types:
 
