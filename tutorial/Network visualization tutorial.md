@@ -138,7 +138,7 @@ Fine-tune the connections between nodes:
 - **Show Weights:** Toggle numeric labels on edges.
 - **Edge Data Norm:** Choose between `Raw`, `Min-Max`, or `Z-score`.
 - **Color by `interact_id`:** Color edges by interaction type.
-- 
+
 ## 6. Color Palette 
 <img width="1058" height="143" alt="image" src="https://github.com/user-attachments/assets/2de0ab08-c883-41e3-bc4d-1b83982ed7e4" />
 
@@ -184,7 +184,7 @@ Data 3: [#FFDC91FF, #FFFFFFFF, #7876B1FF]
 
 Data 4: [#FFFFFFFF, #FFFFFFFF, #6F99ADFF]
 
-Edge:   [#7FBC41FF, #F7F7F7FF, #DE77AEFF]
+Edge: [#7FBC41FF, #F7F7F7FF, #DE77AEFF]
 
 ### Nature Cancer palette
 
@@ -202,7 +202,7 @@ Data 3: [#F39B7FFF, #FFFFFFFF, #8491B4FF]
 
 Data 4: [#FFFFFFFF, #FFFFFFFF, #1A1A1AFF]
 
-Edge:   [#D6604DFF, #F7F7F7FF, #878787FF]
+Edge: [#D6604DFF, #F7F7F7FF, #878787FF]
 
 ### Lancet palette
 
@@ -220,7 +220,7 @@ Data 3: [#0099B4FF, #FFFFFFFF, #925E9FFF]
 
 Data 4: [#FFFFFFFF, #FFFFFFFF, #1B1919FF]
 
-Edge:   [#42B540FF, #F7F7F7FF, #AD002AFF]
+Edge: [#42B540FF, #F7F7F7FF, #AD002AFF]
 
 ### Science palette
 
@@ -236,7 +236,7 @@ Data 3: [#B35806FF, #FFFFFFFF, #631879FF]
 
 Data 4: [#FFFFFFFF, #FFFFFFFF, #1B1919FF]
 
-Edge:   [#008280FF, #F7F7F7FF, #BB0021FF]
+Edge: [#008280FF, #F7F7F7FF, #BB0021FF]
 
 ### Eight-digit hexadecimal colors
 
@@ -247,19 +247,21 @@ RingNet palette definitions use eight-digit hexadecimal color values:
 The components are:
 
 RR: red channel
+
 GG: green channel
+
 BB: blue channel
+
 AA: alpha or transparency channel
 
-Example:
-
-#0072B5FF
-
-Here:
+Example: #0072B5FF
 
 00 is the red value
+
 72 is the green value
+
 B5 is the blue value
+
 FF means fully opaque
 
 Because the browser color picker uses six-digit hexadecimal values, RingNet displays the RGB portion in the color input while preserving the intended fully opaque appearance.
