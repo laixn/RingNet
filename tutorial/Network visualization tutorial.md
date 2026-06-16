@@ -33,6 +33,7 @@ Filter nodes based on their connectivity.
 > **Example:** Setting `Degree Range: 0 – 500` will only show nodes whose visible degree falls within this specific range.
 
 ### Export & Snapshot Management
+<img width="1056" height="75" alt="image" src="https://github.com/user-attachments/assets/cda86c6f-7ec6-4d19-ad87-b49e994ee48a" />
 
 Keep your work safe and ready for publication with these tools:
 
