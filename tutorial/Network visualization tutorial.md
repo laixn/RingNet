@@ -140,7 +140,8 @@ Fine-tune the connections between nodes:
 - **Color by `interact_id`:** Color edges by interaction type.
 
 ## 6. Color Palette 
-<img width="1058" height="143" alt="image" src="https://github.com/user-attachments/assets/2de0ab08-c883-41e3-bc4d-1b83982ed7e4" />
+
+<img width="1038" height="101" alt="image" src="https://github.com/user-attachments/assets/f7471bb6-1fa0-4ceb-952a-8790943b682c" />
 
 The palette controls are displayed above the Data 1–Data 4 color selectors.
 
@@ -170,9 +171,10 @@ Uncheck the active journal palette.
 RingNet automatically returns to the default color configuration.
 ### The New England Journal of Medicine palette
 
-Select: The New England Journal of Medicine
+Select: NEJM (The New England Journal of Medicine)
 
-<img width="696" height="61" alt="image" src="https://github.com/user-attachments/assets/ce48f339-c6ed-4dcb-9149-f753bc6137ce" />
+<img width="687" height="70" alt="image" src="https://github.com/user-attachments/assets/4a5a83c0-518c-4cbb-8189-4b010ab2e231" />
+
 
 Color configuration:
 
@@ -190,7 +192,7 @@ Edge: [#7FBC41FF, #F7F7F7FF, #DE77AEFF]
 
 Select: Nature Cancer
 
-<img width="699" height="64" alt="image" src="https://github.com/user-attachments/assets/fece91fa-018e-4fac-81c1-ab589ae2081e" />
+<img width="687" height="64" alt="image" src="https://github.com/user-attachments/assets/3bdf568e-8b1c-4e22-be34-61956a1500d9" />
 
 Color configuration:
 
@@ -208,7 +210,7 @@ Edge: [#D6604DFF, #F7F7F7FF, #878787FF]
 
 Select: Lancet
 
-<img width="699" height="60" alt="image" src="https://github.com/user-attachments/assets/c76eb44d-91f6-494a-b04f-c98f798312c8" />
+<img width="684" height="67" alt="image" src="https://github.com/user-attachments/assets/b754bc87-bdb1-4195-991e-ac886437b829" />
 
 Color configuration:
 
@@ -224,9 +226,9 @@ Edge: [#42B540FF, #F7F7F7FF, #AD002AFF]
 
 ### Science palette
 
-Select: Palette: Science
+Select: Science
 
-<img width="691" height="65" alt="image" src="https://github.com/user-attachments/assets/8b35a056-e73c-497c-844b-1dc93c72455a" />
+<img width="687" height="65" alt="image" src="https://github.com/user-attachments/assets/a81c6d64-7be5-4d36-acc9-59a870407ecf" />
 
 Data 1: [#3B4992FF, #FFFFFFFF, #EE0000FF]
 
