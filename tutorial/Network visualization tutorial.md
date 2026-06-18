@@ -263,13 +263,13 @@ In the zip file of gene network exmaple, there are 50 nodes and 143 edges, we us
 
 
 
-Example link for gene network directed graph:`https://fip-128-214-252-149.kaj.poutavm.fi/cmt_figures/viewer.html?sid=fd937fbc31a17a1b0b542fb0a4d7fbb6`
+Example link for gene network directed graph: `https://fip-128-214-252-149.kaj.poutavm.fi/cmt_figures/viewer.html?sid=fd937fbc31a17a1b0b542fb0a4d7fbb6`
 
 <img width="2278" height="1221" alt="image" src="https://github.com/user-attachments/assets/ab261e66-6dc0-4dd0-9bb1-22e53a6c59b2" />
 
 
 
-Example link for gene network directed graph:`https://fip-128-214-252-149.kaj.poutavm.fi/cmt_figures/nodir_test.html?sid=17d544b2f622fc992d82837b97ec46b6&snapshot=1`
+Example link for gene network directed graph: `https://fip-128-214-252-149.kaj.poutavm.fi/cmt_figures/nodir_test.html?sid=17d544b2f622fc992d82837b97ec46b6&snapshot=1`
 
 <img width="2124" height="1259" alt="image" src="https://github.com/user-attachments/assets/a1a83461-2908-4508-94a9-9681f22c0435" />
 
