@@ -257,8 +257,11 @@ and `Open undirected network` for reference.
 
 After the Json example file is upladed, the content files from the zip display the graph with layouts, nodes, edges,color and pattern.
 
+In the zip file of gene network exmaple, there are 50 nodes and 143 edges, we use the Json exmaple file as quick start test case for reviewer.
+
 - Gene network json example
-In this zip file, there are 50 nodes and 143 edges, we use the Json exmaple file only as quick start test case for reviewer.
+
+
 
 Example link for gene network directed graph:`https://fip-128-214-252-149.kaj.poutavm.fi/cmt_figures/viewer.html?sid=fd937fbc31a17a1b0b542fb0a4d7fbb6`
 
