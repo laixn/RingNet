@@ -12,6 +12,21 @@
 This section controls network selection, layout, degree filtering, search, and export functions. Users can select networks, adjust layout, define degree range filters, and export results in PNG, SVG, or JSON formats.
 <p>
 
+## Quick start for playing with a toy network
+Users can open a gene regulatory network directly via this link: `https://ringnet.rd.tuni.fi/cmt_figures/viewer.html?sid=127f1192b7cc1efd9556e3e7e1727daa`.
+
+Additionally, users can upload stored files for network visualization using the following steps.
+
+Step 1: Download a ZIP file from the portal by pressing `Gene network json example`. 
+
+Step 2: Upload the ZIP file by pressing `Choose file` then `Upload JSON/Snapshot`.
+
+Step 3: View the network by pressing `Open saved viewer`. The network can be reviewed and customized in the interactive interface. 
+
+They can press `Open directed network` or `Open undirected network` to visualize the network in a directed or undirected manner. 
+
+<img width="1348" height="735" alt="image" src="https://github.com/user-attachments/assets/81d6f386-b14f-4944-9440-ed2e55c69912" />
+
 ### Network Selection
 
 <p align = "justify">Network Selection: Users select a network from a dropdown menu. Only one network is rendered at a time. This improves performance and clarity. Select the specific network or community you wish to explore. Note that **only one network** is displayed at a time to maintain clarity.
@@ -244,36 +259,3 @@ The currently selected palette is included in the viewer configuration. When usi
 | :--- | :--- |
 | Preserves edge direction (`A → B` ≠ `B → A`). | Ignores direction (`A → B` & `B → A` are merged). |
 | Best for: Regulatory or Signaling networks. | Best for: Similarity or Co-expression networks. |
-
-## 8. Quick start for test cases
-
-<img width="1348" height="735" alt="image" src="https://github.com/user-attachments/assets/81d6f386-b14f-4944-9440-ed2e55c69912" />
-
-
-These Json or zip files test cases can be downloaded from the portal and uploaded. By pressing the `open saved viewer`, the graphic display can be reviewed. User can press `Open directed network`
-and `Open undirected network` for reference. 
-
-<img width="1123" height="337" alt="image" src="https://github.com/user-attachments/assets/c8792242-6ebe-43ee-b5e2-95042226039f" />
-
-After the Json example file is upladed, the content files from the zip display the graph with layouts, nodes, edges,color and pattern.
-
-In the zip file of gene network exmaple, there are 50 nodes and 143 edges based on the testing data from community 1 of BLCA, we use the Json exmaple file as quick start test case for reviewer.
-
-- Gene network json example
-
-
-
-Example link for gene network directed graph: `https://fip-128-214-252-149.kaj.poutavm.fi/cmt_figures/viewer.html?sid=fd937fbc31a17a1b0b542fb0a4d7fbb6`
-
-<img width="2278" height="1221" alt="image" src="https://github.com/user-attachments/assets/ab261e66-6dc0-4dd0-9bb1-22e53a6c59b2" />
-
-
-
-Example link for gene network undirected graph: `https://fip-128-214-252-149.kaj.poutavm.fi/cmt_figures/nodir_test.html?sid=17d544b2f622fc992d82837b97ec46b6&snapshot=1`
-
-<img width="2124" height="1259" alt="image" src="https://github.com/user-attachments/assets/a1a83461-2908-4508-94a9-9681f22c0435" />
-
-
-- Patient network json example
-
-- Single cell network json example
