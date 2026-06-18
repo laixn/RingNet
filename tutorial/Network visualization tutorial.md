@@ -21,9 +21,7 @@ Step 1: Download a ZIP file from the portal by pressing `Gene network json examp
 
 Step 2: Upload the ZIP file by pressing `Choose file` then `Upload JSON/Snapshot`.
 
-Step 3: View the network by pressing `Open saved viewer`. The network can be reviewed and customized in the interactive interface. 
-
-They can press `Open directed network` or `Open undirected network` to visualize the network in a directed or undirected manner. 
+Step 3: View the network by pressing `Open saved viewer`. The network can be reviewed and customized in the interactive interface. Users can press `Open directed network` or `Open undirected network` to visualize the network in a directed or undirected manner. 
 
 <img width="1348" height="735" alt="image" src="https://github.com/user-attachments/assets/81d6f386-b14f-4944-9440-ed2e55c69912" />
 
