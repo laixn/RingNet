@@ -1,17 +1,5 @@
 # Network visualization tutorial
 
-## Quick Overview
-
-<p align="justify">RingNet is an interactive network visualization platform for multi modal biological data. Each node can display up to five aligned data layers. The frontend loads JSON network objects and provides filtering, exploration, pattern discovery, and export functions.
-<p>
-
-## 1. Network control panel
-<img width="1046" height="65" alt="image" src="https://github.com/user-attachments/assets/76446a59-0bc9-4d36-9dde-fbbe0c3a1551" />
-
-<p align="justify">
-This section controls network selection, layout, degree filtering, search, and export functions. Users can select networks, adjust layout, define degree range filters, and export results in PNG, SVG, or JSON formats.
-<p>
-
 ## Quick start for playing with a toy network
 Users can open a gene regulatory network directly via this link: `https://ringnet.rd.tuni.fi/cmt_figures/viewer.html?sid=127f1192b7cc1efd9556e3e7e1727daa`.
 
@@ -25,6 +13,12 @@ Step 3: View the network by pressing `Open saved viewer`. The network can be rev
 
 <img width="2179" height="630" alt="image" src="https://github.com/user-attachments/assets/edff1f09-c8ae-4859-abe8-c5a3b933563b" />
 
+## 1. Network control panel
+<img width="1046" height="65" alt="image" src="https://github.com/user-attachments/assets/76446a59-0bc9-4d36-9dde-fbbe0c3a1551" />
+
+<p align="justify">
+This section controls network selection, layout, degree filtering, search, and export functions. Users can select networks, adjust layout, define degree range filters, and export results in PNG, SVG, or JSON formats.
+<p>
 
 ### Network Selection
 
