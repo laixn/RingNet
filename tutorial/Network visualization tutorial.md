@@ -23,7 +23,8 @@ Step 2: Upload the ZIP file by pressing `Choose file` then `Upload JSON/Snapshot
 
 Step 3: View the network by pressing `Open saved viewer`. The network can be reviewed and customized in the interactive interface. Users can press `Open directed network` or `Open undirected network` to visualize the network in a directed or undirected manner. 
 
-<img width="1348" height="735" alt="image" src="https://github.com/user-attachments/assets/81d6f386-b14f-4944-9440-ed2e55c69912" />
+<img width="2179" height="630" alt="image" src="https://github.com/user-attachments/assets/edff1f09-c8ae-4859-abe8-c5a3b933563b" />
+
 
 ### Network Selection
 
