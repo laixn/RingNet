@@ -33,10 +33,10 @@ Upload the following CSV files in the web interface.
 | Edges file | `00_singlecell_edges.csv` | Yes | Defines interactions between cell groups or nodes. |
 | Nodes file | `01_singlecell_nodes.csv` | Yes | Defines nodes and the cell group each node belongs to. |
 | MEG / community file | `02_singlecell_megList.csv` | Yes | Assigns each gene-cell group pair to a community. |
-| Expression matrix | `03_singlecell_expression_matrix_data1.csv` | Yes | Provides expression values for each cell group. |
-| Methylation matrix | `04_singlecell_methylation_matrix_data2.csv` | Yes | Provides methylation values for each cell group. |
-| CNV matrix | `05_singlecell_cnv_data3.csv` | Yes | Provides copy-number variation states. |
-| SNV matrix | `06_singlecell_snv_data4.csv` | Yes | Provides mutation counts or mutation status. |
+| Data1 | `03_singlecell_expression_matrix_data1.csv` | Yes | Provides continuous values for each cell group. |
+| Data2 | `04_singlecell_methylation_matrix_data2.csv` | Yes | Provides continuous values for each cell group. |
+| Data3 | `05_singlecell_cnv_data3.csv` | Yes | Provides integer values for each cell group. |
+| Data4 | `06_singlecell_snv_data4.csv` | Yes | Provides integer values for each cell group. |
 | Sample group | optional | Optional | Adds grouping information for visualization, if supported by your workflow. |
 
 > **Important:** The first column of matrix files must be `cellgroup`. This tells the system to use the single-cell analysis route.
