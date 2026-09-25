@@ -228,4 +228,4 @@ If you find our work useful, please consider citing it:
   year={2026}}
 ```
 
-© [Lai Lab](https://sites.google.com/view/lai-lab) - This code is made available under the GPLv3 License and is available for non-commercial academic purposes.
+© [Lai Lab](https://sites.google.com/view/lai-lab) - This code is available under [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0) license.
